@@ -44,8 +44,9 @@ Build a tool that allows users to:
 | Runtime | Python 3.12 |
 | Package Manager | uv |
 | API Framework | FastAPI |
-| Database | PostgreSQL |
-| ORM | SQLAlchemy (or raw SQL) |
+| Database | PostgreSQL 17 |
+| ORM | SQLAlchemy 2.0 |
+| Migrations | Alembic |
 | X API Client | xdk (official X SDK) |
 | Environment | python-dotenv |
 
@@ -70,29 +71,56 @@ Build a tool that allows users to:
 
 ## Data Model
 
+Schema designed from actual X API responses. Metrics are flattened for easy querying/aggregation. Complex nested data (entities) stored as JSONB with GIN indexes.
+
 ### Accounts
 
 Stores both manually added "seed" accounts and auto-discovered accounts from follower/following expansion.
 
 ```sql
 CREATE TABLE accounts (
-    id BIGINT PRIMARY KEY,              -- Twitter ID
-    username VARCHAR(255) NOT NULL,
-    name VARCHAR(255),
-    bio TEXT,
+    -- Twitter identifiers
+    id BIGINT PRIMARY KEY,                    -- Twitter ID (e.g., 1890869592391626752)
+    username VARCHAR(255) NOT NULL UNIQUE,    -- Handle without @ (e.g., "anthonyronning")
+    
+    -- Profile info
+    name VARCHAR(255),                        -- Display name
+    description TEXT,                         -- Bio
     location VARCHAR(255),
+    url TEXT,                                 -- Website URL from profile
     profile_image_url TEXT,
-    url TEXT,
-    followers_count INT,
-    following_count INT,
-    tweet_count INT,
-    listed_count INT,
-    verified BOOLEAN,
-    created_at TIMESTAMP,               -- Twitter account creation
-    is_seed BOOLEAN DEFAULT FALSE,      -- Manually added vs discovered
-    scraped_at TIMESTAMP,               -- When we last scraped this account
-    inserted_at TIMESTAMP DEFAULT NOW()
+    pinned_tweet_id BIGINT,
+    
+    -- Verification
+    verified BOOLEAN DEFAULT FALSE,
+    verified_type VARCHAR(50),                -- 'blue', 'business', 'government', or NULL
+    protected BOOLEAN DEFAULT FALSE,
+    
+    -- Public metrics (flattened for querying)
+    followers_count INT DEFAULT 0,
+    following_count INT DEFAULT 0,
+    tweet_count INT DEFAULT 0,
+    listed_count INT DEFAULT 0,
+    like_count INT DEFAULT 0,
+    media_count INT DEFAULT 0,
+    
+    -- Entities (JSONB for complex nested data)
+    entities JSONB,                           -- {description: {mentions: [...], urls: [...]}}
+    
+    -- Timestamps
+    twitter_created_at TIMESTAMPTZ,           -- When Twitter account was created
+    
+    -- Our metadata
+    is_seed BOOLEAN DEFAULT FALSE,            -- Manually added vs auto-discovered
+    scrape_status VARCHAR(20) DEFAULT 'pending',  -- pending, scraped, error
+    scraped_at TIMESTAMPTZ,                   -- When we last scraped this account
+    created_at TIMESTAMPTZ DEFAULT NOW(),     -- When we added to our DB
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE INDEX idx_accounts_username ON accounts(username);
+CREATE INDEX idx_accounts_is_seed ON accounts(is_seed);
+CREATE INDEX idx_accounts_scrape_status ON accounts(scrape_status);
 ```
 
 ### Follows (Graph Edges)
@@ -101,11 +129,14 @@ Represents follower/following relationships between accounts.
 
 ```sql
 CREATE TABLE follows (
-    follower_id BIGINT REFERENCES accounts(id),
-    following_id BIGINT REFERENCES accounts(id),
-    discovered_at TIMESTAMP DEFAULT NOW(),
+    follower_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    following_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    discovered_at TIMESTAMPTZ DEFAULT NOW(),
     PRIMARY KEY (follower_id, following_id)
 );
+
+CREATE INDEX idx_follows_follower ON follows(follower_id);
+CREATE INDEX idx_follows_following ON follows(following_id);
 ```
 
 ### Tweets
@@ -114,16 +145,41 @@ Stores tweets for keyword analysis.
 
 ```sql
 CREATE TABLE tweets (
-    id BIGINT PRIMARY KEY,              -- Twitter ID
-    account_id BIGINT REFERENCES accounts(id),
+    -- Twitter identifiers
+    id BIGINT PRIMARY KEY,                    -- Twitter ID
+    account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    
+    -- Content
     text TEXT NOT NULL,
-    created_at TIMESTAMP,
-    like_count INT,
-    retweet_count INT,
-    reply_count INT,
-    quote_count INT,
-    scraped_at TIMESTAMP DEFAULT NOW()
+    lang VARCHAR(10),                         -- Language code (e.g., 'en')
+    
+    -- Conversation threading
+    conversation_id BIGINT,                   -- Root tweet of conversation
+    in_reply_to_user_id BIGINT,               -- User being replied to
+    
+    -- Referenced tweets (JSONB array)
+    referenced_tweets JSONB,                  -- [{type: "replied_to"|"quoted"|"retweeted", id: "..."}]
+    
+    -- Public metrics (flattened for querying)
+    retweet_count INT DEFAULT 0,
+    reply_count INT DEFAULT 0,
+    like_count INT DEFAULT 0,
+    quote_count INT DEFAULT 0,
+    bookmark_count INT DEFAULT 0,
+    impression_count INT DEFAULT 0,
+    
+    -- Entities (JSONB for mentions, urls, hashtags, etc.)
+    entities JSONB,                           -- {mentions: [...], urls: [...], hashtags: [...], annotations: [...]}
+    
+    -- Timestamps  
+    twitter_created_at TIMESTAMPTZ,           -- When tweet was posted
+    scraped_at TIMESTAMPTZ DEFAULT NOW()      -- When we fetched it
 );
+
+CREATE INDEX idx_tweets_account ON tweets(account_id);
+CREATE INDEX idx_tweets_conversation ON tweets(conversation_id);
+CREATE INDEX idx_tweets_twitter_created ON tweets(twitter_created_at);
+CREATE INDEX idx_tweets_entities ON tweets USING GIN (entities);  -- For JSONB queries
 ```
 
 ### Keywords
@@ -135,8 +191,11 @@ CREATE TABLE keywords (
     id SERIAL PRIMARY KEY,
     term VARCHAR(255) NOT NULL,
     type VARCHAR(20) NOT NULL CHECK (type IN ('inclusion', 'exclusion')),
-    created_at TIMESTAMP DEFAULT NOW()
+    case_sensitive BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX idx_keywords_term_type ON keywords(term, type);
 ```
 
 ### Account Keyword Matches
@@ -145,12 +204,29 @@ Tracks which accounts match which keywords (and how often).
 
 ```sql
 CREATE TABLE account_keyword_matches (
-    account_id BIGINT REFERENCES accounts(id),
-    keyword_id INT REFERENCES keywords(id),
-    match_count INT DEFAULT 0,          -- Number of tweets containing keyword
-    last_checked_at TIMESTAMP,
+    account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    keyword_id INT NOT NULL REFERENCES keywords(id) ON DELETE CASCADE,
+    match_count INT DEFAULT 0,                -- Number of tweets containing keyword
+    last_checked_at TIMESTAMPTZ,
     PRIMARY KEY (account_id, keyword_id)
 );
+
+CREATE INDEX idx_matches_keyword ON account_keyword_matches(keyword_id);
+CREATE INDEX idx_matches_count ON account_keyword_matches(match_count DESC);
+```
+
+### Tweet Keyword Matches
+
+Tracks which specific tweets matched which keywords (for drill-down).
+
+```sql
+CREATE TABLE tweet_keyword_matches (
+    tweet_id BIGINT NOT NULL REFERENCES tweets(id) ON DELETE CASCADE,
+    keyword_id INT NOT NULL REFERENCES keywords(id) ON DELETE CASCADE,
+    PRIMARY KEY (tweet_id, keyword_id)
+);
+
+CREATE INDEX idx_tweet_matches_keyword ON tweet_keyword_matches(keyword_id);
 ```
 
 ## Configuration
