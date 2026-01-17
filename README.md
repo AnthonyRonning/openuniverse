@@ -1,0 +1,338 @@
+# OpenCCP - Open Crypto Community Profiler
+
+A graph-based Twitter/X account analysis tool for tracking accounts, their networks, and keyword-based sentiment analysis.
+
+## Project Goals
+
+Build a tool that allows users to:
+
+1. **Add seed accounts** - Manually input Twitter handles to track
+2. **Expand networks** - Automatically pull followers/following (1 level deep) to discover related accounts
+3. **Analyze content** - Track keywords (inclusion and exclusion) across tweets
+4. **Visualize relationships** - Graph view of account networks + list view for detailed exploration
+5. **Drill down** - Click into any account to see their profile, tweets, and keyword matches
+
+## Features
+
+### MVP (Hackathon - 24 hours)
+
+- [ ] Add Twitter handle as a "seed" account
+- [ ] Scrape profile data (bio, metrics, etc.)
+- [ ] Fetch recent tweets (configurable cap)
+- [ ] Fetch followers/following (configurable cap, 1 level deep)
+- [ ] Store all data in PostgreSQL
+- [ ] Keyword configuration (inclusion/exclusion terms)
+- [ ] Keyword matching against tweets
+- [ ] List view of all accounts with labels
+- [ ] Account detail view (profile + tweets + keyword matches)
+- [ ] Basic graph visualization
+
+### Future
+
+- [ ] Time-series tracking (profile changes, new tweets over time)
+- [ ] Remove caps, implement proper rate limiting
+- [ ] AI assistant with tool-calling for natural language queries
+- [ ] Advanced sentiment analysis
+- [ ] Export/reporting features
+
+## Tech Stack
+
+### Backend (Python)
+
+| Component | Technology |
+|-----------|------------|
+| Runtime | Python 3.12 |
+| Package Manager | uv |
+| API Framework | FastAPI |
+| Database | PostgreSQL |
+| ORM | SQLAlchemy (or raw SQL) |
+| X API Client | xdk (official X SDK) |
+| Environment | python-dotenv |
+
+### Frontend (TypeScript)
+
+| Component | Technology |
+|-----------|------------|
+| Runtime | Bun |
+| Framework | React 18+ |
+| Routing | React Router |
+| Styling | Tailwind CSS |
+| Components | shadcn/ui |
+| Graph Visualization | TBD (vis.js, react-force-graph, or d3) |
+
+### Infrastructure
+
+| Component | Technology |
+|-----------|------------|
+| Dev Environment | Nix Flakes |
+| Database | PostgreSQL (local via Nix) |
+| Process Manager | TBD (honcho, overmind, or similar) |
+
+## Data Model
+
+### Accounts
+
+Stores both manually added "seed" accounts and auto-discovered accounts from follower/following expansion.
+
+```sql
+CREATE TABLE accounts (
+    id BIGINT PRIMARY KEY,              -- Twitter ID
+    username VARCHAR(255) NOT NULL,
+    name VARCHAR(255),
+    bio TEXT,
+    location VARCHAR(255),
+    profile_image_url TEXT,
+    url TEXT,
+    followers_count INT,
+    following_count INT,
+    tweet_count INT,
+    listed_count INT,
+    verified BOOLEAN,
+    created_at TIMESTAMP,               -- Twitter account creation
+    is_seed BOOLEAN DEFAULT FALSE,      -- Manually added vs discovered
+    scraped_at TIMESTAMP,               -- When we last scraped this account
+    inserted_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Follows (Graph Edges)
+
+Represents follower/following relationships between accounts.
+
+```sql
+CREATE TABLE follows (
+    follower_id BIGINT REFERENCES accounts(id),
+    following_id BIGINT REFERENCES accounts(id),
+    discovered_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (follower_id, following_id)
+);
+```
+
+### Tweets
+
+Stores tweets for keyword analysis.
+
+```sql
+CREATE TABLE tweets (
+    id BIGINT PRIMARY KEY,              -- Twitter ID
+    account_id BIGINT REFERENCES accounts(id),
+    text TEXT NOT NULL,
+    created_at TIMESTAMP,
+    like_count INT,
+    retweet_count INT,
+    reply_count INT,
+    quote_count INT,
+    scraped_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Keywords
+
+User-defined keywords for analysis.
+
+```sql
+CREATE TABLE keywords (
+    id SERIAL PRIMARY KEY,
+    term VARCHAR(255) NOT NULL,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('inclusion', 'exclusion')),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Account Keyword Matches
+
+Tracks which accounts match which keywords (and how often).
+
+```sql
+CREATE TABLE account_keyword_matches (
+    account_id BIGINT REFERENCES accounts(id),
+    keyword_id INT REFERENCES keywords(id),
+    match_count INT DEFAULT 0,          -- Number of tweets containing keyword
+    last_checked_at TIMESTAMP,
+    PRIMARY KEY (account_id, keyword_id)
+);
+```
+
+## Configuration
+
+Configurable caps for development/prototyping (will be removed for production):
+
+```python
+# config.py
+MAX_TWEETS_PER_ACCOUNT = 3      # Tweets to fetch per account
+MAX_FOLLOWERS_TO_FETCH = 3      # Followers to pull (1 level deep)
+MAX_FOLLOWING_TO_FETCH = 3      # Following to pull (1 level deep)
+```
+
+## API Design
+
+### Accounts
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/accounts` | Add a seed account by username |
+| GET | `/api/accounts` | List all accounts (with filters) |
+| GET | `/api/accounts/:id` | Get account details |
+| POST | `/api/accounts/:id/scrape` | Trigger rescrape of account |
+
+### Keywords
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/keywords` | Add a keyword |
+| GET | `/api/keywords` | List all keywords |
+| DELETE | `/api/keywords/:id` | Remove a keyword |
+| POST | `/api/keywords/analyze` | Run keyword analysis on all accounts |
+
+### Graph
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/graph` | Get nodes and edges for visualization |
+| GET | `/api/graph/:id` | Get subgraph centered on an account |
+
+## X API Data Available
+
+### User Fields
+
+- `id`, `username`, `name`
+- `description` (bio)
+- `location`
+- `profile_image_url`
+- `url`
+- `public_metrics` (followers_count, following_count, tweet_count, listed_count)
+- `verified`, `verified_type`
+- `created_at`
+- `pinned_tweet_id`
+
+### Tweet Fields
+
+- `id`, `text`, `created_at`
+- `author_id`
+- `public_metrics` (like_count, retweet_count, reply_count, quote_count)
+- `entities` (hashtags, mentions, urls, cashtags)
+- `context_annotations` (topics X has identified)
+- `conversation_id`
+- `referenced_tweets` (for retweets, quotes, replies)
+
+## Project Structure
+
+```
+openccp/
+├── flake.nix                 # Nix dev environment
+├── flake.lock
+├── README.md
+├── .env                      # Local secrets (gitignored)
+├── .env.example
+├── .gitignore
+│
+├── backend/
+│   ├── requirements.txt
+│   ├── config.py             # Caps and settings
+│   ├── db/
+│   │   ├── schema.sql
+│   │   └── connection.py
+│   ├── scraper/
+│   │   ├── client.py         # X API client wrapper
+│   │   ├── accounts.py       # Account scraping logic
+│   │   ├── tweets.py         # Tweet scraping logic
+│   │   └── followers.py      # Follower/following expansion
+│   ├── analysis/
+│   │   └── keywords.py       # Keyword matching logic
+│   ├── api/
+│   │   ├── main.py           # FastAPI app
+│   │   ├── routes/
+│   │   │   ├── accounts.py
+│   │   │   ├── keywords.py
+│   │   │   └── graph.py
+│   │   └── models.py         # Pydantic models
+│   └── scripts/
+│       └── seed.py           # Dev seeding script
+│
+├── frontend/
+│   ├── package.json
+│   ├── bun.lockb
+│   ├── index.html
+│   ├── vite.config.ts
+│   ├── tailwind.config.js
+│   ├── tsconfig.json
+│   ├── components.json       # shadcn config
+│   ├── src/
+│   │   ├── main.tsx
+│   │   ├── App.tsx
+│   │   ├── routes/
+│   │   │   ├── index.tsx     # Dashboard / list view
+│   │   │   ├── account.tsx   # Account detail view
+│   │   │   ├── graph.tsx     # Graph visualization
+│   │   │   └── keywords.tsx  # Keyword management
+│   │   ├── components/
+│   │   │   ├── ui/           # shadcn components
+│   │   │   ├── AccountCard.tsx
+│   │   │   ├── AccountList.tsx
+│   │   │   ├── GraphView.tsx
+│   │   │   └── KeywordBadge.tsx
+│   │   ├── lib/
+│   │   │   ├── api.ts        # API client
+│   │   │   └── utils.ts
+│   │   └── styles/
+│   │       └── globals.css
+│   └── public/
+│
+└── hello.py                  # Initial X API test (can remove later)
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Nix with flakes enabled
+- X Developer account with API access
+
+### Setup
+
+```bash
+# Enter dev environment
+nix develop
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your X API credentials
+
+# Set up database
+createdb openccp
+psql openccp < backend/db/schema.sql
+
+# Install backend dependencies
+cd backend
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+
+# Install frontend dependencies
+cd ../frontend
+bun install
+
+# Run backend
+cd ../backend
+uvicorn api.main:app --reload
+
+# Run frontend (separate terminal)
+cd frontend
+bun dev
+```
+
+## Rate Limiting Notes
+
+X API has rate limits that vary by tier:
+
+| Tier | User Lookups | Tweet Reads | Follower Reads |
+|------|--------------|-------------|----------------|
+| Free | 100/month | Very limited | Very limited |
+| Basic ($100/mo) | 10,000/month | 10,000/month | Higher |
+| Pro ($5,000/mo) | 1,000,000/month | Full access | Full access |
+
+For prototype/hackathon, we use configurable caps to stay within limits. Production will need proper rate limit handling with backoff and queuing.
+
+## License
+
+TBD
