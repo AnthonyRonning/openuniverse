@@ -1,9 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
-import { useParams, Link } from 'react-router-dom';
-import { fetchCamp, fetchCampLeaderboard } from '../api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { fetchCamp, fetchCampLeaderboard, addKeyword, deleteKeyword, deleteCamp } from '../api';
 
 export default function CampDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  
+  const [newKeyword, setNewKeyword] = useState('');
+  const [newWeight, setNewWeight] = useState('1.0');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const { data: camp, isLoading } = useQuery({
     queryKey: ['camp', slug],
@@ -17,21 +24,75 @@ export default function CampDetail() {
     enabled: !!slug,
   });
 
+  const addKeywordMutation = useMutation({
+    mutationFn: (data: { term: string; weight: number }) => addKeyword(slug!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['camp', slug] });
+      setNewKeyword('');
+      setNewWeight('1.0');
+    },
+  });
+
+  const deleteKeywordMutation = useMutation({
+    mutationFn: (keywordId: number) => deleteKeyword(slug!, keywordId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['camp', slug] }),
+  });
+
+  const deleteCampMutation = useMutation({
+    mutationFn: () => deleteCamp(slug!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['camps'] });
+      navigate('/camps');
+    },
+  });
+
+  const handleAddKeyword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newKeyword.trim()) {
+      addKeywordMutation.mutate({ term: newKeyword.trim(), weight: parseFloat(newWeight) || 1.0 });
+    }
+  };
+
   if (isLoading) return <div className="text-gray-400">Loading...</div>;
   if (!camp) return <div className="text-red-400">Camp not found</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div
-          className="w-4 h-12 rounded"
-          style={{ backgroundColor: camp.color }}
-        />
-        <div>
-          <h1 className="text-3xl font-bold text-white">{camp.name}</h1>
-          <p className="text-gray-400 mt-1">{camp.description}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-4 h-12 rounded" style={{ backgroundColor: camp.color }} />
+          <div>
+            <h1 className="text-3xl font-bold text-white">{camp.name}</h1>
+            <p className="text-gray-400 mt-1">{camp.description}</p>
+          </div>
         </div>
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="px-4 py-2 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
+        >
+          Delete Camp
+        </button>
       </div>
+
+      {showDeleteConfirm && (
+        <div className="bg-red-900/30 border border-red-800 rounded-lg p-4">
+          <p className="text-red-400 mb-3">Are you sure you want to delete this camp? This will remove all keywords and scores.</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => deleteCampMutation.mutate()}
+              className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+            >
+              Yes, Delete
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-3 gap-6">
         {/* Leaderboard */}
@@ -41,7 +102,7 @@ export default function CampDetail() {
           </div>
           <div className="divide-y divide-gray-800">
             {leaderboard?.entries.length === 0 ? (
-              <div className="p-4 text-gray-500">No accounts with scores yet</div>
+              <div className="p-4 text-gray-500">No accounts with scores yet. Run analysis first!</div>
             ) : (
               leaderboard?.entries.map((entry) => (
                 <Link
@@ -80,14 +141,52 @@ export default function CampDetail() {
           <div className="p-4 border-b border-gray-800">
             <h2 className="text-lg font-semibold text-white">Keywords ({camp.keywords.length})</h2>
           </div>
+          
+          {/* Add keyword form */}
+          <form onSubmit={handleAddKeyword} className="p-4 border-b border-gray-800">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newKeyword}
+                onChange={(e) => setNewKeyword(e.target.value)}
+                placeholder="New keyword..."
+                className="flex-1 px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              />
+              <input
+                type="number"
+                value={newWeight}
+                onChange={(e) => setNewWeight(e.target.value)}
+                step="0.5"
+                min="0.5"
+                max="5"
+                className="w-16 px-2 py-2 rounded bg-gray-800 border border-gray-700 text-white text-sm focus:outline-none focus:border-blue-500"
+              />
+              <button
+                type="submit"
+                disabled={!newKeyword.trim() || addKeywordMutation.isPending}
+                className="px-3 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:bg-gray-700"
+              >
+                Add
+              </button>
+            </div>
+          </form>
+
           <div className="p-4 space-y-2 max-h-96 overflow-y-auto">
             {camp.keywords.map((kw) => (
               <div
                 key={kw.id}
-                className="flex items-center justify-between p-2 rounded bg-gray-800/50"
+                className="flex items-center justify-between p-2 rounded bg-gray-800/50 group"
               >
                 <span className="text-white">{kw.term}</span>
-                <span className="text-sm text-gray-400">×{kw.weight}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-400">×{kw.weight}</span>
+                  <button
+                    onClick={() => deleteKeywordMutation.mutate(kw.id)}
+                    className="text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-300 transition-opacity"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
             ))}
           </div>

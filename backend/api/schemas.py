@@ -192,6 +192,25 @@ class KeywordAddRequest(BaseModel):
     case_sensitive: bool = False
 
 
+class KeywordUpdateRequest(BaseModel):
+    term: Optional[str] = None
+    weight: Optional[float] = None
+    case_sensitive: Optional[bool] = None
+
+
+class CampCreateRequest(BaseModel):
+    name: str
+    slug: str
+    description: Optional[str] = None
+    color: str = "#3b82f6"
+
+
+class CampUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    color: Optional[str] = None
+
+
 # === Analysis Schemas ===
 
 class MatchDetail(BaseModel):

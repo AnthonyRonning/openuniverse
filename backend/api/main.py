@@ -240,6 +240,24 @@ def list_camps(db: Session = Depends(get_db)):
     return schemas.CampList(camps=camps, total=len(camps))
 
 
+@app.post("/api/camps", response_model=schemas.CampBase)
+def create_camp(request: schemas.CampCreateRequest, db: Session = Depends(get_db)):
+    """Create a new camp."""
+    # Check if slug exists
+    existing = db.query(Camp).filter(Camp.slug == request.slug).first()
+    if existing:
+        raise HTTPException(status_code=409, detail=f"Camp with slug '{request.slug}' already exists")
+    
+    analyzer = AnalyzerService(db)
+    camp = analyzer.create_camp(
+        name=request.name,
+        slug=request.slug,
+        description=request.description,
+        color=request.color,
+    )
+    return camp
+
+
 @app.get("/api/camps/{slug}", response_model=schemas.CampDetail)
 def get_camp(slug: str, db: Session = Depends(get_db)):
     """Get camp details including keywords."""
@@ -283,6 +301,37 @@ def get_camp_leaderboard(slug: str, limit: int = Query(20, ge=1, le=100), db: Se
     return schemas.CampLeaderboard(camp=camp, entries=entries)
 
 
+@app.put("/api/camps/{slug}", response_model=schemas.CampBase)
+def update_camp(slug: str, request: schemas.CampUpdateRequest, db: Session = Depends(get_db)):
+    """Update a camp."""
+    camp = db.query(Camp).filter(Camp.slug == slug).first()
+    if not camp:
+        raise HTTPException(status_code=404, detail=f"Camp '{slug}' not found")
+    
+    if request.name is not None:
+        camp.name = request.name
+    if request.description is not None:
+        camp.description = request.description
+    if request.color is not None:
+        camp.color = request.color
+    
+    db.commit()
+    db.refresh(camp)
+    return camp
+
+
+@app.delete("/api/camps/{slug}")
+def delete_camp(slug: str, db: Session = Depends(get_db)):
+    """Delete a camp and all its keywords."""
+    camp = db.query(Camp).filter(Camp.slug == slug).first()
+    if not camp:
+        raise HTTPException(status_code=404, detail=f"Camp '{slug}' not found")
+    
+    db.delete(camp)
+    db.commit()
+    return {"deleted": True, "slug": slug}
+
+
 @app.post("/api/camps/{slug}/keywords", response_model=schemas.CampKeyword)
 def add_keyword_to_camp(slug: str, request: schemas.KeywordAddRequest, db: Session = Depends(get_db)):
     """Add a keyword to a camp."""
@@ -298,6 +347,45 @@ def add_keyword_to_camp(slug: str, request: schemas.KeywordAddRequest, db: Sessi
         case_sensitive=request.case_sensitive,
     )
     return schemas.CampKeyword(id=keyword.id, term=keyword.term, weight=keyword.weight, case_sensitive=keyword.case_sensitive)
+
+
+@app.put("/api/camps/{slug}/keywords/{keyword_id}", response_model=schemas.CampKeyword)
+def update_keyword(slug: str, keyword_id: int, request: schemas.KeywordUpdateRequest, db: Session = Depends(get_db)):
+    """Update a keyword."""
+    camp = db.query(Camp).filter(Camp.slug == slug).first()
+    if not camp:
+        raise HTTPException(status_code=404, detail=f"Camp '{slug}' not found")
+    
+    keyword = db.query(Keyword).filter(Keyword.id == keyword_id, Keyword.camp_id == camp.id).first()
+    if not keyword:
+        raise HTTPException(status_code=404, detail=f"Keyword {keyword_id} not found in camp '{slug}'")
+    
+    if request.term is not None:
+        keyword.term = request.term
+    if request.weight is not None:
+        keyword.weight = request.weight
+    if request.case_sensitive is not None:
+        keyword.case_sensitive = request.case_sensitive
+    
+    db.commit()
+    db.refresh(keyword)
+    return schemas.CampKeyword(id=keyword.id, term=keyword.term, weight=keyword.weight, case_sensitive=keyword.case_sensitive)
+
+
+@app.delete("/api/camps/{slug}/keywords/{keyword_id}")
+def delete_keyword_from_camp(slug: str, keyword_id: int, db: Session = Depends(get_db)):
+    """Delete a keyword from a camp."""
+    camp = db.query(Camp).filter(Camp.slug == slug).first()
+    if not camp:
+        raise HTTPException(status_code=404, detail=f"Camp '{slug}' not found")
+    
+    keyword = db.query(Keyword).filter(Keyword.id == keyword_id, Keyword.camp_id == camp.id).first()
+    if not keyword:
+        raise HTTPException(status_code=404, detail=f"Keyword {keyword_id} not found in camp '{slug}'")
+    
+    db.delete(keyword)
+    db.commit()
+    return {"deleted": True, "keyword_id": keyword_id}
 
 
 # === Analysis ===

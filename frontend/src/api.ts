@@ -185,3 +185,50 @@ export async function analyzeAccounts(username?: string): Promise<{ analyzed: nu
   });
   return res.json();
 }
+
+// Camp CRUD
+export async function createCamp(data: { name: string; slug: string; description?: string; color?: string }): Promise<Camp> {
+  const res = await fetch(`${API_BASE}/camps`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to create camp');
+  return res.json();
+}
+
+export async function updateCamp(slug: string, data: { name?: string; description?: string; color?: string }): Promise<Camp> {
+  const res = await fetch(`${API_BASE}/camps/${slug}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function deleteCamp(slug: string): Promise<void> {
+  await fetch(`${API_BASE}/camps/${slug}`, { method: 'DELETE' });
+}
+
+// Keyword CRUD
+export async function addKeyword(campSlug: string, data: { term: string; weight?: number; case_sensitive?: boolean }): Promise<CampKeyword> {
+  const res = await fetch(`${API_BASE}/camps/${campSlug}/keywords`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function updateKeyword(campSlug: string, keywordId: number, data: { term?: string; weight?: number }): Promise<CampKeyword> {
+  const res = await fetch(`${API_BASE}/camps/${campSlug}/keywords/${keywordId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function deleteKeyword(campSlug: string, keywordId: number): Promise<void> {
+  await fetch(`${API_BASE}/camps/${campSlug}/keywords/${keywordId}`, { method: 'DELETE' });
+}
