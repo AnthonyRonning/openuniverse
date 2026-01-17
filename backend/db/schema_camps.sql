@@ -16,8 +16,8 @@ ALTER TABLE keywords ADD COLUMN camp_id INT REFERENCES camps(id) ON DELETE CASCA
 ALTER TABLE keywords ADD COLUMN weight FLOAT DEFAULT 1.0;
 
 -- Drop the old type constraint and add new one
-ALTER TABLE keywords DROP CONSTRAINT IF EXISTS check_keyword_type;
-ALTER TABLE keywords ADD CONSTRAINT check_keyword_type 
+ALTER TABLE keywords DROP CONSTRAINT IF EXISTS keywords_type_check;
+ALTER TABLE keywords ADD CONSTRAINT keywords_type_check
     CHECK (type IN ('inclusion', 'exclusion', 'signal'));
 
 -- Account scores per camp (the main analysis result)
