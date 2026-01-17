@@ -1,0 +1,178 @@
+import { useQuery } from '@tanstack/react-query';
+import { useParams, Link } from 'react-router-dom';
+import {
+  fetchAccount,
+  fetchAccountTweets,
+  fetchAccountFollowing,
+  fetchAccountFollowers,
+} from '../api';
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+      <h2 className="text-lg font-semibold text-white mb-4">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function AccountCard({ account }: { account: any }) {
+  return (
+    <Link
+      to={`/accounts/${account.username}`}
+      className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors"
+    >
+      {account.profile_image_url ? (
+        <img src={account.profile_image_url} alt="" className="w-8 h-8 rounded-full" />
+      ) : (
+        <div className="w-8 h-8 rounded-full bg-gray-700" />
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium text-white truncate">{account.name}</div>
+        <div className="text-xs text-gray-400">@{account.username}</div>
+      </div>
+    </Link>
+  );
+}
+
+export default function AccountDetail() {
+  const { username } = useParams<{ username: string }>();
+
+  const { data: account, isLoading, error } = useQuery({
+    queryKey: ['account', username],
+    queryFn: () => fetchAccount(username!),
+    enabled: !!username,
+  });
+
+  const { data: tweets } = useQuery({
+    queryKey: ['account-tweets', username],
+    queryFn: () => fetchAccountTweets(username!),
+    enabled: !!username,
+  });
+
+  const { data: following } = useQuery({
+    queryKey: ['account-following', username],
+    queryFn: () => fetchAccountFollowing(username!),
+    enabled: !!username,
+  });
+
+  const { data: followers } = useQuery({
+    queryKey: ['account-followers', username],
+    queryFn: () => fetchAccountFollowers(username!),
+    enabled: !!username,
+  });
+
+  if (isLoading) return <div className="text-gray-400">Loading...</div>;
+  if (error) return <div className="text-red-400">Account not found</div>;
+  if (!account) return null;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start gap-6">
+        {account.profile_image_url ? (
+          <img
+            src={account.profile_image_url.replace('_normal', '_400x400')}
+            alt={account.username}
+            className="w-24 h-24 rounded-full"
+          />
+        ) : (
+          <div className="w-24 h-24 rounded-full bg-gray-700" />
+        )}
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-white">{account.name}</h1>
+            {account.is_seed && (
+              <span className="px-2 py-1 text-xs rounded bg-purple-600 text-white">SEED</span>
+            )}
+            {account.verified && <span className="text-blue-400 text-xl">✓</span>}
+          </div>
+          <div className="text-gray-400">@{account.username}</div>
+          {account.description && (
+            <p className="text-gray-300 mt-2">{account.description}</p>
+          )}
+          {account.location && (
+            <p className="text-gray-500 text-sm mt-1">📍 {account.location}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800">
+          <div className="text-2xl font-bold text-white">
+            {account.followers_count.toLocaleString()}
+          </div>
+          <div className="text-sm text-gray-400">Followers</div>
+        </div>
+        <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800">
+          <div className="text-2xl font-bold text-white">
+            {account.following_count.toLocaleString()}
+          </div>
+          <div className="text-sm text-gray-400">Following</div>
+        </div>
+        <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800">
+          <div className="text-2xl font-bold text-white">
+            {account.tweet_count.toLocaleString()}
+          </div>
+          <div className="text-sm text-gray-400">Tweets</div>
+        </div>
+        <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800">
+          <div className="text-2xl font-bold text-white">
+            {account.like_count.toLocaleString()}
+          </div>
+          <div className="text-sm text-gray-400">Likes</div>
+        </div>
+      </div>
+
+      {/* Content Grid */}
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* Tweets */}
+        <Section title={`Tweets (${tweets?.total || 0} in DB)`}>
+          {tweets?.tweets.length === 0 ? (
+            <p className="text-gray-500 text-sm">No tweets scraped yet</p>
+          ) : (
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {tweets?.tweets.map((tweet) => (
+                <div key={tweet.id} className="p-3 rounded-lg bg-gray-800/50 text-sm">
+                  <p className="text-gray-300">{tweet.text}</p>
+                  <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                    <span>❤️ {tweet.like_count}</span>
+                    <span>🔁 {tweet.retweet_count}</span>
+                    <span>💬 {tweet.reply_count}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Section>
+
+        {/* Following */}
+        <Section title={`Following (${following?.total || 0} in DB)`}>
+          {following?.accounts.length === 0 ? (
+            <p className="text-gray-500 text-sm">None in database</p>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {following?.accounts.map((a) => (
+                <AccountCard key={a.id} account={a} />
+              ))}
+            </div>
+          )}
+        </Section>
+
+        {/* Followers */}
+        <Section title={`Followers (${followers?.total || 0} in DB)`}>
+          {followers?.accounts.length === 0 ? (
+            <p className="text-gray-500 text-sm">None in database</p>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {followers?.accounts.map((a) => (
+                <AccountCard key={a.id} account={a} />
+              ))}
+            </div>
+          )}
+        </Section>
+      </div>
+    </div>
+  );
+}
