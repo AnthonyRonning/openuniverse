@@ -71,6 +71,11 @@ class Account(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    # Bio sentiment analysis
+    bio_sentiment: Mapped[Optional[str]] = mapped_column(String(20))  # positive, negative, neutral, mixed
+    bio_sentiment_score: Mapped[Optional[float]] = mapped_column(Float)  # confidence 0.0-1.0
+    bio_sentiment_analyzed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
     # Relationships
     tweets: Mapped[List["Tweet"]] = relationship("Tweet", back_populates="account", cascade="all, delete-orphan")
     keyword_matches: Mapped[List["AccountKeywordMatch"]] = relationship("AccountKeywordMatch", back_populates="account", cascade="all, delete-orphan")

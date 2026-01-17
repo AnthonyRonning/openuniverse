@@ -42,7 +42,11 @@ class AnalyzerService:
             found = re.findall(pattern, text, flags)
             if found:
                 # Check sentiment filter
-                if sentiment and kw.expected_sentiment != "any":
+                # If sentiment is None (e.g., bio), only match keywords with expected_sentiment='any'
+                # If sentiment is provided, check if it matches expected_sentiment
+                if kw.expected_sentiment != "any":
+                    if sentiment is None:
+                        continue  # No sentiment available, skip non-'any' keywords
                     if kw.expected_sentiment != sentiment:
                         continue  # Sentiment doesn't match expectation, skip
                 matches.append((kw, len(found)))
@@ -69,9 +73,8 @@ class AnalyzerService:
             if not keywords:
                 continue
 
-            # Analyze bio (no sentiment for bio, use 'any' keywords only or all)
-            # For bio, we check keywords that expect 'any' sentiment OR we use a neutral approach
-            bio_matches = self._find_matches(account.description or "", keywords, sentiment=None)
+            # Analyze bio - use bio_sentiment if available
+            bio_matches = self._find_matches(account.description or "", keywords, sentiment=account.bio_sentiment)
             bio_score = self._compute_score(bio_matches) * 2  # Bio gets 2x weight
 
             # Analyze each tweet individually and track matches
