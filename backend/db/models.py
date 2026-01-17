@@ -136,6 +136,11 @@ class Tweet(Base):
     twitter_created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     scraped_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    # Sentiment analysis
+    sentiment: Mapped[Optional[str]] = mapped_column(String(20))  # positive, negative, neutral, mixed
+    sentiment_score: Mapped[Optional[float]] = mapped_column(Float)  # confidence 0.0-1.0
+    sentiment_analyzed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
     # Relationships
     account: Mapped["Account"] = relationship("Account", back_populates="tweets")
     keyword_matches: Mapped[List["TweetKeywordMatch"]] = relationship("TweetKeywordMatch", back_populates="tweet", cascade="all, delete-orphan")

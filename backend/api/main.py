@@ -434,3 +434,62 @@ def get_account_analysis(username: str, db: Session = Depends(get_db)):
         ))
     
     return schemas.AccountAnalysis(account=account, scores=score_list)
+
+
+# === Sentiment Analysis (Grok) ===
+
+@app.get("/api/sentiment/stats", response_model=schemas.SentimentStats)
+def get_sentiment_stats(db: Session = Depends(get_db)):
+    """Get sentiment analysis statistics."""
+    from backend.analyzer.sentiment import SentimentAnalyzer
+    analyzer = SentimentAnalyzer(db)
+    return analyzer.get_sentiment_stats()
+
+
+@app.post("/api/sentiment/analyze", response_model=schemas.SentimentAnalyzeResponse)
+def analyze_sentiment(request: schemas.SentimentAnalyzeRequest, db: Session = Depends(get_db)):
+    """Run sentiment analysis on tweets (uses Grok API)."""
+    from backend.analyzer.sentiment import SentimentAnalyzer
+    analyzer = SentimentAnalyzer(db)
+    
+    if request.camp_id:
+        result = analyzer.analyze_camp(request.camp_id, limit=request.limit)
+    else:
+        result = analyzer.analyze_all(limit=request.limit)
+    
+    return schemas.SentimentAnalyzeResponse(
+        tweets_found=result.get("tweets_found", 0),
+        analyzed=result.get("analyzed", 0),
+        saved=result.get("saved", 0),
+        camp=result.get("camp"),
+    )
+
+
+@app.get("/api/camps/{camp_id}/tweets/sentiment", response_model=List[schemas.CampTweetWithSentiment])
+def get_camp_tweets_with_sentiment(camp_id: int, limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+    """Get top tweets for a camp including sentiment data."""
+    analyzer = AnalyzerService(db)
+    camp = analyzer.get_camp(camp_id)
+    if not camp:
+        raise HTTPException(status_code=404, detail=f"Camp {camp_id} not found")
+    
+    top_tweets = analyzer.get_camp_top_tweets(camp_id, limit=limit)
+    tweets = [
+        schemas.CampTweetWithSentiment(
+            tweet_id=t["tweet"].id,
+            text=t["tweet"].text,
+            username=t["account"].username,
+            name=t["account"].name,
+            profile_image_url=t["account"].profile_image_url,
+            followers_count=t["account"].followers_count,
+            score=t["score"],
+            matched_keywords=t["matched_keywords"],
+            like_count=t["tweet"].like_count,
+            retweet_count=t["tweet"].retweet_count,
+            sentiment=t["tweet"].sentiment,
+            sentiment_score=t["tweet"].sentiment_score,
+        )
+        for t in top_tweets
+    ]
+    
+    return tweets

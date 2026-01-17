@@ -271,3 +271,44 @@ class AnalyzeRequest(BaseModel):
 class AnalyzeResponse(BaseModel):
     analyzed: int
     total_scores: int
+
+
+# === Sentiment Schemas ===
+
+class SentimentStats(BaseModel):
+    total_tweets: int
+    analyzed: int
+    pending: int
+    by_sentiment: Dict[str, int]
+
+
+class SentimentAnalyzeRequest(BaseModel):
+    camp_id: Optional[int] = None  # None = analyze all matched tweets
+    limit: int = 100
+
+
+class SentimentAnalyzeResponse(BaseModel):
+    tweets_found: int
+    analyzed: int
+    saved: int
+    camp: Optional[str] = None
+
+
+class TweetWithSentiment(BaseModel):
+    id: int
+    text: str
+    username: str
+    name: Optional[str] = None
+    profile_image_url: Optional[str] = None
+    sentiment: Optional[str] = None
+    sentiment_score: Optional[float] = None
+    matched_keywords: List[str] = []
+    like_count: int = 0
+    retweet_count: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CampTweetWithSentiment(CampTweet):
+    sentiment: Optional[str] = None
+    sentiment_score: Optional[float] = None

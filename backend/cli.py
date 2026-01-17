@@ -13,7 +13,12 @@ Usage:
     python -m backend.cli analyze              # Analyze all accounts
     python -m backend.cli analyze anthonyronning  # Analyze specific account
     python -m backend.cli camps                # List all camps
-    python -m backend.cli leaderboard ai-enthusiast  # Show camp leaderboard
+    python -m backend.cli leaderboard 1        # Show camp leaderboard by ID
+    
+    # Sentiment analysis (uses Grok)
+    python -m backend.cli sentiment            # Analyze all unanalyzed tweets
+    python -m backend.cli sentiment --camp 1   # Analyze tweets for camp 1
+    python -m backend.cli sentiment --stats    # Show sentiment stats
 """
 
 import sys
@@ -222,18 +227,18 @@ def cmd_camps():
         db.close()
 
 
-def cmd_leaderboard(camp_slug: str):
+def cmd_leaderboard(camp_id: str):
     """Show top accounts for a camp."""
     db = SessionLocal()
     try:
         analyzer = AnalyzerService(db)
-        camp = analyzer.get_camp_by_slug(camp_slug)
+        camp = analyzer.get_camp(int(camp_id))
         
         if not camp:
-            print(f"Camp '{camp_slug}' not found")
+            print(f"Camp ID {camp_id} not found")
             print("Available camps:")
             for c in analyzer.get_camps():
-                print(f"  - {c.slug}")
+                print(f"  - {c.id}: {c.name}")
             return
         
         leaderboard = analyzer.get_camp_leaderboard(camp.id, limit=20)
@@ -248,6 +253,41 @@ def cmd_leaderboard(camp_slug: str):
         for i, score in enumerate(leaderboard, 1):
             account = score.account
             print(f"{i:2}. @{account.username:<20} score: {score.score:>6.1f}  (bio: {score.bio_score:.1f}, tweets: {score.tweet_score:.1f})")
+    finally:
+        db.close()
+
+
+def cmd_sentiment(camp_id: int = None, stats_only: bool = False):
+    """Analyze tweet sentiment using Grok."""
+    from backend.analyzer.sentiment import SentimentAnalyzer
+    
+    db = SessionLocal()
+    try:
+        analyzer = SentimentAnalyzer(db)
+        
+        if stats_only:
+            stats = analyzer.get_sentiment_stats()
+            print("\nSENTIMENT STATS")
+            print("=" * 40)
+            print(f"Total tweets: {stats['total_tweets']}")
+            print(f"Analyzed: {stats['analyzed']}")
+            print(f"Pending: {stats['pending']}")
+            print(f"\nBy sentiment:")
+            for sentiment, count in stats['by_sentiment'].items():
+                print(f"  {sentiment}: {count}")
+            return
+        
+        if camp_id:
+            print(f"\nAnalyzing sentiment for camp {camp_id}...")
+            result = analyzer.analyze_camp(camp_id)
+        else:
+            print("\nAnalyzing sentiment for all matched tweets...")
+            result = analyzer.analyze_all()
+        
+        print("\nRESULT")
+        print("=" * 40)
+        for key, value in result.items():
+            print(f"{key}: {value}")
     finally:
         db.close()
 
@@ -290,9 +330,18 @@ def main():
     
     elif cmd == "leaderboard":
         if len(sys.argv) < 3:
-            print("Usage: python -m backend.cli leaderboard <camp-slug>")
+            print("Usage: python -m backend.cli leaderboard <camp-id>")
             sys.exit(1)
         cmd_leaderboard(sys.argv[2])
+    
+    elif cmd == "sentiment":
+        stats_only = "--stats" in sys.argv
+        camp_id = None
+        if "--camp" in sys.argv:
+            idx = sys.argv.index("--camp")
+            if idx + 1 < len(sys.argv):
+                camp_id = int(sys.argv[idx + 1])
+        cmd_sentiment(camp_id=camp_id, stats_only=stats_only)
     
     else:
         print(f"Unknown command: {cmd}")
