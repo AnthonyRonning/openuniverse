@@ -25,3 +25,7 @@ ENV/
 data/
 *.db
 *.sqlite
+
+# PostgreSQL (local dev)
+.pgdata/
+.pgsockets/
