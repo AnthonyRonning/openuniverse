@@ -258,9 +258,46 @@ export interface AccountSummary {
   topics: Record<string, TopicSentiment>;
 }
 
-export async function fetchDefaultTopics(): Promise<{ topics: string[] }> {
-  const res = await fetch(`${API_BASE}/topics`);
+// Topic types (configurable)
+export interface Topic {
+  id: number;
+  name: string;
+  description: string | null;
+  enabled: boolean;
+  sort_order: number;
+  created_at: string | null;
+}
+
+export async function fetchTopics(enabledOnly = false): Promise<{ topics: Topic[]; total: number }> {
+  const url = enabledOnly ? `${API_BASE}/topics?enabled_only=true` : `${API_BASE}/topics`;
+  const res = await fetch(url);
   return res.json();
+}
+
+export async function createTopic(data: { name: string; description?: string; enabled?: boolean; sort_order?: number }): Promise<Topic> {
+  const res = await fetch(`${API_BASE}/topics`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.detail || 'Failed to create topic');
+  }
+  return res.json();
+}
+
+export async function updateTopic(id: number, data: { name?: string; description?: string; enabled?: boolean; sort_order?: number }): Promise<Topic> {
+  const res = await fetch(`${API_BASE}/topics/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function deleteTopic(id: number): Promise<void> {
+  await fetch(`${API_BASE}/topics/${id}`, { method: 'DELETE' });
 }
 
 export async function generateAccountSummary(

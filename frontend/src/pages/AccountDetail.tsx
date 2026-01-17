@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import {
   fetchAccount,
@@ -8,8 +8,12 @@ import {
   fetchAccountFollowers,
   fetchAccountAnalysis,
   generateAccountSummary,
+  fetchTopics,
+  createTopic,
+  updateTopic,
+  deleteTopic,
 } from '../api';
-import type { AccountSummary } from '../api';
+import type { AccountSummary, Topic } from '../api';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -39,18 +43,146 @@ function AccountCard({ account }: { account: any }) {
   );
 }
 
+function TopicsSettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [newTopicName, setNewTopicName] = useState('');
+  const [newTopicDesc, setNewTopicDesc] = useState('');
+
+  const { data: topicsData, isLoading } = useQuery({
+    queryKey: ['topics'],
+    queryFn: () => fetchTopics(),
+    enabled: isOpen,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: createTopic,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['topics'] });
+      setNewTopicName('');
+      setNewTopicDesc('');
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, enabled }: { id: number; enabled: boolean }) => updateTopic(id, { enabled }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteTopic,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+  });
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-700 w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">Configure Topics</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white text-xl">&times;</button>
+        </div>
+
+        {/* Add new topic */}
+        <div className="mb-4 p-3 bg-gray-800 rounded-lg">
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              placeholder="Topic name..."
+              value={newTopicName}
+              onChange={e => setNewTopicName(e.target.value)}
+              className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+            />
+            <button
+              onClick={() => newTopicName && createMutation.mutate({ name: newTopicName, description: newTopicDesc || undefined })}
+              disabled={!newTopicName || createMutation.isPending}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded text-sm"
+            >
+              Add
+            </button>
+          </div>
+          <input
+            type="text"
+            placeholder="Description (optional)..."
+            value={newTopicDesc}
+            onChange={e => setNewTopicDesc(e.target.value)}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+          />
+        </div>
+
+        {/* Topics list */}
+        <div className="flex-1 overflow-y-auto space-y-2">
+          {isLoading ? (
+            <p className="text-gray-400 text-sm">Loading...</p>
+          ) : (
+            topicsData?.topics.map(topic => (
+              <div key={topic.id} className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
+                <button
+                  onClick={() => toggleMutation.mutate({ id: topic.id, enabled: !topic.enabled })}
+                  className={`w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center ${
+                    topic.enabled ? 'bg-purple-600 border-purple-600' : 'border-gray-500'
+                  }`}
+                >
+                  {topic.enabled && <span className="text-white text-xs">✓</span>}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className={`text-sm font-medium ${topic.enabled ? 'text-white' : 'text-gray-500'}`}>
+                    {topic.name}
+                  </div>
+                  {topic.description && (
+                    <div className="text-xs text-gray-500 truncate">{topic.description}</div>
+                  )}
+                </div>
+                <button
+                  onClick={() => deleteMutation.mutate(topic.id)}
+                  className="text-red-400 hover:text-red-300 text-sm px-2"
+                >
+                  ✕
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-gray-700">
+          <p className="text-xs text-gray-500">
+            Only enabled topics will be used when generating summaries.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SummaryCard({ username }: { username: string }) {
   const [summary, setSummary] = useState<AccountSummary | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const mutation = useMutation({
     mutationFn: () => generateAccountSummary(username),
     onSuccess: (data) => setSummary(data),
   });
 
+  const GearIcon = () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+
   if (!summary) {
     return (
       <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-        <h2 className="text-lg font-semibold text-white mb-4">AI Topic Summary</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">AI Topic Summary</h2>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+            title="Configure topics"
+          >
+            <GearIcon />
+          </button>
+        </div>
         <p className="text-gray-400 text-sm mb-4">
           Generate an AI-powered analysis of this account's positions on various topics.
         </p>
@@ -66,6 +198,7 @@ function SummaryCard({ username }: { username: string }) {
             {mutation.error instanceof Error ? mutation.error.message : 'Failed to generate summary'}
           </p>
         )}
+        <TopicsSettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
       </div>
     );
   }
@@ -76,13 +209,22 @@ function SummaryCard({ username }: { username: string }) {
     <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-white">AI Topic Summary</h2>
-        <button
-          onClick={() => mutation.mutate()}
-          disabled={mutation.isPending}
-          className="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition-colors"
-        >
-          {mutation.isPending ? 'Regenerating...' : 'Regenerate'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSettings(true)}
+            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+            title="Configure topics"
+          >
+            <GearIcon />
+          </button>
+          <button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+            className="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition-colors"
+          >
+            {mutation.isPending ? 'Regenerating...' : 'Regenerate'}
+          </button>
+        </div>
       </div>
       <div className="space-y-4">
         {topics.map(([topicName, sentiment]) => (
@@ -115,6 +257,7 @@ function SummaryCard({ username }: { username: string }) {
           </div>
         ))}
       </div>
+      <TopicsSettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }
