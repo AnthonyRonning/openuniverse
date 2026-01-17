@@ -5,6 +5,7 @@ import {
   fetchAccountTweets,
   fetchAccountFollowing,
   fetchAccountFollowers,
+  fetchAccountAnalysis,
 } from '../api';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -59,6 +60,12 @@ export default function AccountDetail() {
   const { data: followers } = useQuery({
     queryKey: ['account-followers', username],
     queryFn: () => fetchAccountFollowers(username!),
+    enabled: !!username,
+  });
+
+  const { data: analysis } = useQuery({
+    queryKey: ['account-analysis', username],
+    queryFn: () => fetchAccountAnalysis(username!),
     enabled: !!username,
   });
 
@@ -124,6 +131,49 @@ export default function AccountDetail() {
           <div className="text-sm text-gray-400">Likes</div>
         </div>
       </div>
+
+      {/* Camp Analysis */}
+      {analysis?.scores && analysis.scores.length > 0 && (
+        <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+          <h2 className="text-lg font-semibold text-white mb-4">Camp Analysis</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {analysis.scores.map((score) => (
+              <div
+                key={score.camp_id}
+                className="p-4 rounded-lg border"
+                style={{ borderColor: score.camp_color + '40', backgroundColor: score.camp_color + '10' }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-white">{score.camp_name}</span>
+                  <span className="text-2xl font-bold" style={{ color: score.camp_color }}>
+                    {score.score.toFixed(1)}
+                  </span>
+                </div>
+                <div className="text-xs text-gray-400 mb-2">
+                  Bio: {score.bio_score.toFixed(1)} | Tweets: {score.tweet_score.toFixed(1)}
+                </div>
+                {(score.bio_matches.length > 0 || score.tweet_matches.length > 0) && (
+                  <div className="mt-2 pt-2 border-t border-gray-700">
+                    <div className="text-xs text-gray-500">Matches:</div>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {score.bio_matches.map((m, i) => (
+                        <span key={`bio-${i}`} className="px-2 py-0.5 text-xs rounded bg-gray-800 text-gray-300">
+                          {m.term} ×{m.count}
+                        </span>
+                      ))}
+                      {score.tweet_matches.slice(0, 5).map((m, i) => (
+                        <span key={`tweet-${i}`} className="px-2 py-0.5 text-xs rounded bg-gray-800 text-gray-300">
+                          {m.term} ×{m.count}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Content Grid */}
       <div className="grid md:grid-cols-3 gap-6">

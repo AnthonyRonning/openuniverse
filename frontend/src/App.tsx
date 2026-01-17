@@ -5,6 +5,8 @@ import Accounts from './pages/Accounts';
 import AccountDetail from './pages/AccountDetail';
 import Graph from './pages/Graph';
 import Scrape from './pages/Scrape';
+import Camps from './pages/Camps';
+import CampDetail from './pages/CampDetail';
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           </Link>
           <NavLink to="/">Dashboard</NavLink>
           <NavLink to="/accounts">Accounts</NavLink>
+          <NavLink to="/camps">Camps</NavLink>
           <NavLink to="/graph">Graph</NavLink>
           <NavLink to="/scrape">Scrape</NavLink>
         </div>
@@ -53,6 +56,8 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/accounts/:username" element={<AccountDetail />} />
+            <Route path="/camps" element={<Camps />} />
+            <Route path="/camps/:slug" element={<CampDetail />} />
             <Route path="/graph" element={<Graph />} />
             <Route path="/scrape" element={<Scrape />} />
           </Routes>

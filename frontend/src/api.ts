@@ -100,3 +100,88 @@ export async function scrapeAccount(username: string): Promise<{ account: Accoun
   });
   return res.json();
 }
+
+// Camp types
+export interface Camp {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  color: string;
+}
+
+export interface CampKeyword {
+  id: number;
+  term: string;
+  weight: number;
+  case_sensitive: boolean;
+}
+
+export interface CampDetail extends Camp {
+  keywords: CampKeyword[];
+}
+
+export interface MatchDetail {
+  term: string;
+  count: number;
+  weight: number;
+}
+
+export interface AccountCampScore {
+  camp_id: number;
+  camp_name: string;
+  camp_color: string;
+  score: number;
+  bio_score: number;
+  tweet_score: number;
+  bio_matches: MatchDetail[];
+  tweet_matches: MatchDetail[];
+}
+
+export interface AccountAnalysis {
+  account: Account;
+  scores: AccountCampScore[];
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  account: Account;
+  score: number;
+  bio_score: number;
+  tweet_score: number;
+}
+
+export interface CampLeaderboard {
+  camp: Camp;
+  entries: LeaderboardEntry[];
+}
+
+// Camp API calls
+export async function fetchCamps(): Promise<{ camps: Camp[]; total: number }> {
+  const res = await fetch(`${API_BASE}/camps`);
+  return res.json();
+}
+
+export async function fetchCamp(slug: string): Promise<CampDetail> {
+  const res = await fetch(`${API_BASE}/camps/${slug}`);
+  return res.json();
+}
+
+export async function fetchCampLeaderboard(slug: string): Promise<CampLeaderboard> {
+  const res = await fetch(`${API_BASE}/camps/${slug}/leaderboard`);
+  return res.json();
+}
+
+export async function fetchAccountAnalysis(username: string): Promise<AccountAnalysis> {
+  const res = await fetch(`${API_BASE}/accounts/${username}/analysis`);
+  return res.json();
+}
+
+export async function analyzeAccounts(username?: string): Promise<{ analyzed: number; total_scores: number }> {
+  const res = await fetch(`${API_BASE}/analyze`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username }),
+  });
+  return res.json();
+}
