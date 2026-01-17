@@ -367,35 +367,41 @@ openccp/
 ### Setup
 
 ```bash
-# Enter dev environment
+# Enter dev environment (auto-starts PostgreSQL on port 5433, creates database)
 nix develop
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your X API credentials
+# Edit .env with your X API credentials (auto-created from .env.example)
+# At minimum you need X_BEARER_TOKEN
 
-# Set up database
-createdb openccp
-psql openccp < backend/db/schema.sql
+# Initialize database schema
+just db-init
 
-# Install backend dependencies
-cd backend
-uv venv
-source .venv/bin/activate
-uv pip install -r requirements.txt
+# Install all dependencies
+just install
 
-# Install frontend dependencies
-cd ../frontend
-bun install
+# Run backend (terminal 1, after running nix develop)
+just backend
 
-# Run backend
-cd ../backend
-uvicorn api.main:app --reload
-
-# Run frontend (separate terminal)
-cd frontend
-bun dev
+# Run frontend (terminal 2, after running nix develop)
+just frontend
 ```
+
+The backend runs at `http://localhost:8000` and frontend at `http://localhost:5173`.
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `just` | List all commands |
+| `just db-init` | Initialize database schema |
+| `just db-reset` | Drop and recreate all tables |
+| `just db` | Connect to database with psql |
+| `just install` | Install backend + frontend dependencies |
+| `just backend` | Run backend server |
+| `just frontend` | Run frontend dev server |
+| `just scrape <username>` | Scrape a Twitter account |
+| `just analyze` | Analyze all accounts for camp membership |
+| `just stats` | Show database statistics |
 
 ## Rate Limiting Notes
 
