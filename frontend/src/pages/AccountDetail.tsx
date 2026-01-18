@@ -18,15 +18,6 @@ import {
 import type { AccountSummary } from '../api';
 import { TweetCard } from '../components/TweetCard';
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-card rounded-xl p-4 ring-1 ring-foreground/10 shadow-xs">
-      <h2 className="text-sm font-medium text-foreground mb-3">{title}</h2>
-      {children}
-    </div>
-  );
-}
-
 function AccountCard({ account }: { account: any }) {
   return (
     <Link
@@ -42,6 +33,13 @@ function AccountCard({ account }: { account: any }) {
         <div className="text-xs font-medium text-foreground truncate">{account.name}</div>
         <div className="text-xs text-muted-foreground">@{account.username}</div>
       </div>
+      {account.followers_count > 0 && (
+        <div className="text-xs text-muted-foreground">
+          {account.followers_count >= 1000 
+            ? `${(account.followers_count / 1000).toFixed(1)}K` 
+            : account.followers_count}
+        </div>
+      )}
     </Link>
   );
 }
@@ -313,6 +311,8 @@ function SummaryCard({ username, account }: { username: string; account: { name:
 export default function AccountDetail() {
   const { username } = useParams<{ username: string }>();
   const [tweetSort, setTweetSort] = useState<'latest' | 'top'>('latest');
+  const [followingSort, setFollowingSort] = useState<'recent' | 'top'>('recent');
+  const [followersSort, setFollowersSort] = useState<'recent' | 'top'>('recent');
 
   const { data: account, isLoading, error } = useQuery({
     queryKey: ['account', username],
@@ -327,14 +327,14 @@ export default function AccountDetail() {
   });
 
   const { data: following } = useQuery({
-    queryKey: ['account-following', username],
-    queryFn: () => fetchAccountFollowing(username!),
+    queryKey: ['account-following', username, followingSort],
+    queryFn: () => fetchAccountFollowing(username!, followingSort),
     enabled: !!username,
   });
 
   const { data: followers } = useQuery({
-    queryKey: ['account-followers', username],
-    queryFn: () => fetchAccountFollowers(username!),
+    queryKey: ['account-followers', username, followersSort],
+    queryFn: () => fetchAccountFollowers(username!, followersSort),
     enabled: !!username,
   });
 
@@ -518,30 +518,72 @@ export default function AccountDetail() {
         </div>
 
         {/* Following */}
-        <Section title={`Following (${following?.total || 0} in DB)`}>
-          {following?.accounts.length === 0 ? (
-            <p className="text-xs text-muted-foreground">None in database</p>
-          ) : (
-            <div className="space-y-1.5 max-h-80 overflow-y-auto">
-              {following?.accounts.map((a) => (
-                <AccountCard key={a.id} account={a} />
-              ))}
+        <div className="bg-card rounded-xl ring-1 ring-foreground/10 shadow-xs overflow-hidden">
+          <div className="p-3 border-b border-border flex items-center justify-between">
+            <h2 className="text-sm font-medium text-foreground">Following ({following?.total || 0} in DB)</h2>
+            <div className="flex items-center gap-2">
+              <div className="flex text-xs">
+                <button
+                  onClick={() => setFollowingSort('recent')}
+                  className={`px-2 py-1 rounded-l ${followingSort === 'recent' ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Recent
+                </button>
+                <button
+                  onClick={() => setFollowingSort('top')}
+                  className={`px-2 py-1 rounded-r ${followingSort === 'top' ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Top
+                </button>
+              </div>
             </div>
-          )}
-        </Section>
+          </div>
+          <div className="p-3">
+            {following?.accounts.length === 0 ? (
+              <p className="text-xs text-muted-foreground">None in database</p>
+            ) : (
+              <div className="space-y-1.5 max-h-80 overflow-y-auto">
+                {following?.accounts.map((a) => (
+                  <AccountCard key={a.id} account={a} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Followers */}
-        <Section title={`Followers (${followers?.total || 0} in DB)`}>
-          {followers?.accounts.length === 0 ? (
-            <p className="text-xs text-muted-foreground">None in database</p>
-          ) : (
-            <div className="space-y-1.5 max-h-80 overflow-y-auto">
-              {followers?.accounts.map((a) => (
-                <AccountCard key={a.id} account={a} />
-              ))}
+        <div className="bg-card rounded-xl ring-1 ring-foreground/10 shadow-xs overflow-hidden">
+          <div className="p-3 border-b border-border flex items-center justify-between">
+            <h2 className="text-sm font-medium text-foreground">Followers ({followers?.total || 0} in DB)</h2>
+            <div className="flex items-center gap-2">
+              <div className="flex text-xs">
+                <button
+                  onClick={() => setFollowersSort('recent')}
+                  className={`px-2 py-1 rounded-l ${followersSort === 'recent' ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Recent
+                </button>
+                <button
+                  onClick={() => setFollowersSort('top')}
+                  className={`px-2 py-1 rounded-r ${followersSort === 'top' ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Top
+                </button>
+              </div>
             </div>
-          )}
-        </Section>
+          </div>
+          <div className="p-3">
+            {followers?.accounts.length === 0 ? (
+              <p className="text-xs text-muted-foreground">None in database</p>
+            ) : (
+              <div className="space-y-1.5 max-h-80 overflow-y-auto">
+                {followers?.accounts.map((a) => (
+                  <AccountCard key={a.id} account={a} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

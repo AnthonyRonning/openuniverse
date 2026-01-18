@@ -102,28 +102,62 @@ def get_account_tweets(
 
 
 @app.get("/api/accounts/{username}/following", response_model=schemas.AccountList)
-def get_account_following(username: str, db: Session = Depends(get_db)):
+def get_account_following(
+    username: str,
+    sort: str = Query("recent", description="Sort by: 'recent' (discovered_at) or 'top' (followers_count)"),
+    db: Session = Depends(get_db),
+):
     """Get accounts that this user follows."""
     account = db.query(Account).filter(Account.username == username).first()
     if not account:
         raise HTTPException(status_code=404, detail=f"Account @{username} not found")
     
-    follows = db.query(Follow).filter(Follow.follower_id == account.id).all()
+    follows = db.query(Follow).filter(Follow.follower_id == account.id)
+    if sort == "top":
+        # Join with Account to sort by followers_count
+        follows = follows.join(Account, Follow.following_id == Account.id).order_by(Account.followers_count.desc())
+    else:
+        follows = follows.order_by(Follow.discovered_at.desc())
+    
+    follows = follows.all()
     following_ids = [f.following_id for f in follows]
-    accounts = db.query(Account).filter(Account.id.in_(following_ids)).all() if following_ids else []
+    
+    if not following_ids:
+        return schemas.AccountList(accounts=[], total=0)
+    
+    # Maintain sort order
+    accounts_map = {a.id: a for a in db.query(Account).filter(Account.id.in_(following_ids)).all()}
+    accounts = [accounts_map[fid] for fid in following_ids if fid in accounts_map]
     return schemas.AccountList(accounts=accounts, total=len(accounts))
 
 
 @app.get("/api/accounts/{username}/followers", response_model=schemas.AccountList)
-def get_account_followers(username: str, db: Session = Depends(get_db)):
+def get_account_followers(
+    username: str,
+    sort: str = Query("recent", description="Sort by: 'recent' (discovered_at) or 'top' (followers_count)"),
+    db: Session = Depends(get_db),
+):
     """Get accounts that follow this user."""
     account = db.query(Account).filter(Account.username == username).first()
     if not account:
         raise HTTPException(status_code=404, detail=f"Account @{username} not found")
     
-    follows = db.query(Follow).filter(Follow.following_id == account.id).all()
+    follows = db.query(Follow).filter(Follow.following_id == account.id)
+    if sort == "top":
+        # Join with Account to sort by followers_count
+        follows = follows.join(Account, Follow.follower_id == Account.id).order_by(Account.followers_count.desc())
+    else:
+        follows = follows.order_by(Follow.discovered_at.desc())
+    
+    follows = follows.all()
     follower_ids = [f.follower_id for f in follows]
-    accounts = db.query(Account).filter(Account.id.in_(follower_ids)).all() if follower_ids else []
+    
+    if not follower_ids:
+        return schemas.AccountList(accounts=[], total=0)
+    
+    # Maintain sort order
+    accounts_map = {a.id: a for a in db.query(Account).filter(Account.id.in_(follower_ids)).all()}
+    accounts = [accounts_map[fid] for fid in follower_ids if fid in accounts_map]
     return schemas.AccountList(accounts=accounts, total=len(accounts))
 
 

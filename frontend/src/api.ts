@@ -79,13 +79,13 @@ export async function fetchAccountTweets(username: string, sort: 'latest' | 'top
   return res.json();
 }
 
-export async function fetchAccountFollowing(username: string): Promise<{ accounts: Account[]; total: number }> {
-  const res = await fetch(`${API_BASE}/accounts/${username}/following`);
+export async function fetchAccountFollowing(username: string, sort: 'recent' | 'top' = 'recent'): Promise<{ accounts: Account[]; total: number }> {
+  const res = await fetch(`${API_BASE}/accounts/${username}/following?sort=${sort}`);
   return res.json();
 }
 
-export async function fetchAccountFollowers(username: string): Promise<{ accounts: Account[]; total: number }> {
-  const res = await fetch(`${API_BASE}/accounts/${username}/followers`);
+export async function fetchAccountFollowers(username: string, sort: 'recent' | 'top' = 'recent'): Promise<{ accounts: Account[]; total: number }> {
+  const res = await fetch(`${API_BASE}/accounts/${username}/followers?sort=${sort}`);
   return res.json();
 }
 
