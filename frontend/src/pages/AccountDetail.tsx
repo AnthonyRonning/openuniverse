@@ -13,8 +13,8 @@ import {
   updateTopic,
   deleteTopic,
 } from '../api';
-import type { AccountSummary, Topic } from '../api';
-import { TweetText } from '../components/TweetText';
+import type { AccountSummary } from '../api';
+import { TweetCard } from '../components/TweetCard';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -249,15 +249,13 @@ function SummaryCard({ username }: { username: string }) {
             {sentiment.tweets && sentiment.tweets.length > 0 && (
               <div className="mt-2 space-y-2">
                 {sentiment.tweets.map((tweet) => (
-                  <div key={tweet.id} className="p-2 rounded bg-secondary/50 text-sm">
-                    <p className="text-foreground/90">
-                      <TweetText text={tweet.text} />
-                    </p>
-                    <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                      <span>❤️ {tweet.like_count}</span>
-                      <span>🔁 {tweet.retweet_count}</span>
-                    </div>
-                  </div>
+                  <TweetCard
+                    key={tweet.id}
+                    id={tweet.id}
+                    text={tweet.text}
+                    likeCount={tweet.like_count}
+                    retweetCount={tweet.retweet_count}
+                  />
                 ))}
               </div>
             )}
@@ -446,16 +444,14 @@ export default function AccountDetail() {
             ) : (
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {tweets?.tweets.map((tweet) => (
-                  <div key={tweet.id} className="p-2 rounded-md bg-secondary/50 text-xs">
-                    <p className="text-foreground/80">
-                      <TweetText text={tweet.text} />
-                    </p>
-                    <div className="flex gap-3 mt-1.5 text-muted-foreground">
-                      <span>👁️ {tweet.impression_count.toLocaleString()}</span>
-                      <span>{tweet.like_count} likes</span>
-                      <span>{tweet.retweet_count} rt</span>
-                    </div>
-                  </div>
+                  <TweetCard
+                    key={tweet.id}
+                    id={tweet.id}
+                    text={tweet.text}
+                    likeCount={tweet.like_count}
+                    retweetCount={tweet.retweet_count}
+                    impressionCount={tweet.impression_count}
+                  />
                 ))}
               </div>
             )}

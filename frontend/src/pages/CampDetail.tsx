@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { fetchCamp, fetchCampLeaderboard, fetchCampTopTweets, addKeyword, deleteKeyword, deleteCamp } from '../api';
-import { TweetText } from '../components/TweetText';
+import { TweetCard } from '../components/TweetCard';
 
 export default function CampDetail() {
   const { id } = useParams<{ id: string }>();
@@ -183,46 +183,21 @@ export default function CampDetail() {
                 <div className="p-3 text-xs text-muted-foreground">No matching tweets found.</div>
               ) : (
                 topTweets?.tweets.map((tweet) => (
-                  <div key={tweet.tweet_id} className="p-3 hover:bg-secondary/30 transition-colors">
-                    <div className="flex items-start gap-2.5">
-                      <Link to={`/accounts/${tweet.username}`}>
-                        {tweet.profile_image_url ? (
-                          <img src={tweet.profile_image_url} alt="" className="w-8 h-8 rounded-full" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-muted" />
-                        )}
-                      </Link>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <Link to={`/accounts/${tweet.username}`} className="font-medium text-foreground hover:underline">
-                            {tweet.name || tweet.username}
-                          </Link>
-                          <span className="text-muted-foreground">@{tweet.username}</span>
-                        </div>
-                        <p className="text-xs text-foreground/80 mt-1 whitespace-pre-wrap">
-                          <TweetText text={tweet.text} />
-                        </p>
-                        <div className="flex items-center gap-3 mt-1.5">
-                          <span className="text-xs text-muted-foreground">👁️ {tweet.impression_count.toLocaleString()}</span>
-                          <span className="text-xs text-muted-foreground">{tweet.like_count} likes</span>
-                          <span className="text-xs text-muted-foreground">{tweet.retweet_count} rt</span>
-                          <div className="flex gap-1">
-                            {tweet.matched_keywords.map((kw) => (
-                              <span
-                                key={kw}
-                                className="px-1.5 py-0.5 text-xs rounded bg-primary/20 text-primary"
-                              >
-                                {kw}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-lg font-bold text-primary">
-                        {tweet.score.toFixed(1)}
-                      </div>
-                    </div>
-                  </div>
+                  <TweetCard
+                    key={tweet.tweet_id}
+                    id={tweet.tweet_id}
+                    text={tweet.text}
+                    likeCount={tweet.like_count}
+                    retweetCount={tweet.retweet_count}
+                    impressionCount={tweet.impression_count}
+                    author={{
+                      username: tweet.username,
+                      name: tweet.name || undefined,
+                      profileImageUrl: tweet.profile_image_url || undefined,
+                    }}
+                    matchedKeywords={tweet.matched_keywords}
+                    score={tweet.score}
+                  />
                 ))
               )}
             </div>

@@ -14,6 +14,7 @@ export interface Account {
   tweet_count: number;
   like_count: number;
   is_seed: boolean;
+  twitter_created_at: string | null;
 }
 
 export interface Tweet {
