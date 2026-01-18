@@ -16,10 +16,10 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
     <Link
       to={to}
-      className={`px-4 py-2 rounded-lg transition-colors ${
+      className={`h-8 px-2.5 text-sm rounded-md inline-flex items-center transition-colors ${
         isActive
-          ? 'bg-blue-600 text-white'
-          : 'text-gray-400 hover:text-white hover:bg-gray-800'
+          ? 'bg-primary text-primary-foreground'
+          : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
       }`}
     >
       {children}
@@ -29,10 +29,10 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gray-950">
-      <nav className="border-b border-gray-800 bg-gray-900/50 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-2">
-          <Link to="/" className="text-xl font-bold text-white mr-6">
+    <div className="min-h-screen bg-background">
+      <nav className="border-b border-border bg-card/50 backdrop-blur sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 py-2 flex items-center gap-1">
+          <Link to="/" className="text-lg font-semibold text-foreground mr-4">
             OpenCCP
           </Link>
           <NavLink to="/">Dashboard</NavLink>
@@ -42,7 +42,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           <NavLink to="/scrape">Scrape</NavLink>
         </div>
       </nav>
-      <main className="max-w-7xl mx-auto px-4 py-6">{children}</main>
+      <main className="max-w-6xl mx-auto px-4 py-4">{children}</main>
     </div>
   );
 }

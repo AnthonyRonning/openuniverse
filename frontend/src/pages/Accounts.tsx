@@ -12,15 +12,15 @@ export default function Accounts() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Accounts</h1>
-          <p className="text-gray-400 mt-1">
+          <h1 className="text-2xl font-semibold text-foreground">Accounts</h1>
+          <p className="text-sm text-muted-foreground">
             {data?.total || 0} accounts in database
           </p>
         </div>
-        <label className="flex items-center gap-2 text-gray-400 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
           <input
             type="checkbox"
             checked={seedsOnly}
@@ -32,58 +32,50 @@ export default function Accounts() {
       </div>
 
       {isLoading ? (
-        <div className="text-gray-400">Loading...</div>
+        <div className="text-muted-foreground">Loading...</div>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-2">
           {data?.accounts.map((account) => (
             <Link
               key={account.id}
               to={`/accounts/${account.username}`}
-              className="flex items-center gap-4 p-4 rounded-xl bg-gray-900 border border-gray-800 hover:border-gray-700 transition-colors"
+              className="flex items-center gap-3 p-3 rounded-xl bg-card ring-1 ring-foreground/10 hover:ring-primary/30 transition-all overflow-hidden"
             >
               {account.profile_image_url ? (
                 <img
                   src={account.profile_image_url}
                   alt={account.username}
-                  className="w-12 h-12 rounded-full"
+                  className="w-10 h-10 rounded-full shrink-0"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0">
                   ?
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-white truncate">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-medium text-foreground truncate">
                     {account.name || account.username}
                   </span>
                   {account.is_seed && (
-                    <span className="px-2 py-0.5 text-xs rounded bg-purple-600 text-white">
+                    <span className="px-1.5 py-0.5 text-xs rounded bg-primary text-primary-foreground shrink-0">
                       SEED
                     </span>
                   )}
                   {account.verified && (
-                    <span className="text-blue-400">✓</span>
+                    <span className="text-primary shrink-0">✓</span>
                   )}
                 </div>
-                <div className="text-sm text-gray-400">@{account.username}</div>
+                <div className="text-xs text-muted-foreground">@{account.username}</div>
                 {account.description && (
-                  <div className="text-sm text-gray-500 truncate mt-1">
+                  <div className="text-xs text-muted-foreground/70 truncate mt-0.5">
                     {account.description}
                   </div>
                 )}
               </div>
-              <div className="text-right text-sm">
-                <div className="text-white">{account.followers_count.toLocaleString()}</div>
-                <div className="text-gray-500">followers</div>
-              </div>
-              <div className="text-right text-sm">
-                <div className="text-white">{account.following_count.toLocaleString()}</div>
-                <div className="text-gray-500">following</div>
-              </div>
-              <div className="text-right text-sm">
-                <div className="text-white">{account.tweet_count.toLocaleString()}</div>
-                <div className="text-gray-500">tweets</div>
+              <div className="text-right shrink-0">
+                <div className="text-sm text-foreground">{account.followers_count.toLocaleString()}</div>
+                <div className="text-xs text-muted-foreground">followers</div>
               </div>
             </Link>
           ))}
