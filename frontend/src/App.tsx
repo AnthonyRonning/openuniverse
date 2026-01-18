@@ -41,7 +41,6 @@ function Layout({ children }: { children: React.ReactNode }) {
           <NavLink to="/">Dashboard</NavLink>
           <NavLink to="/tweets">Tweets</NavLink>
           <NavLink to="/accounts">Accounts</NavLink>
-          <NavLink to="/camps">Camps</NavLink>
           <NavLink to="/topic">Topic</NavLink>
           <NavLink to="/graph">Graph</NavLink>
           <NavLink to="/scrape">Scrape</NavLink>
