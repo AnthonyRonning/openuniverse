@@ -54,10 +54,39 @@ export default function ReportDetail() {
   );
 }
 
+interface StoredTweet {
+  id: string;
+  text: string;
+  author_username?: string;
+  author_name?: string;
+  author_profile_image?: string;
+  like_count?: number;
+  retweet_count?: number;
+  impression_count?: number;
+  reason?: string;
+}
+
 function TopicSidesReport({ content }: { content: Record<string, unknown> }) {
-  const sideA = (content.side_a || []) as Array<{ id: string; text: string; author_username?: string; reason?: string }>;
-  const sideB = (content.side_b || []) as Array<{ id: string; text: string; author_username?: string; reason?: string }>;
-  const ambiguous = (content.ambiguous || []) as Array<{ id: string; text: string; author_username?: string; reason?: string }>;
+  const sideA = (content.side_a || []) as StoredTweet[];
+  const sideB = (content.side_b || []) as StoredTweet[];
+  const ambiguous = (content.ambiguous || []) as StoredTweet[];
+
+  const renderTweet = (t: StoredTweet) => (
+    <TweetCard 
+      key={t.id} 
+      id={t.id} 
+      text={t.text} 
+      likeCount={t.like_count}
+      retweetCount={t.retweet_count}
+      impressionCount={t.impression_count}
+      reason={t.reason} 
+      author={t.author_username ? { 
+        username: t.author_username,
+        name: t.author_name,
+        profileImageUrl: t.author_profile_image,
+      } : undefined} 
+    />
+  );
   
   return (
     <div className="space-y-6">
@@ -65,17 +94,13 @@ function TopicSidesReport({ content }: { content: Record<string, unknown> }) {
         <div>
           <h3 className="font-medium mb-3">{content.side_a_name as string || 'Side A'} ({sideA.length})</h3>
           <div className="space-y-2">
-            {sideA.map((t) => (
-              <TweetCard key={t.id} id={t.id} text={t.text} reason={t.reason} author={t.author_username ? { username: t.author_username } : undefined} />
-            ))}
+            {sideA.map(renderTweet)}
           </div>
         </div>
         <div>
           <h3 className="font-medium mb-3">{content.side_b_name as string || 'Side B'} ({sideB.length})</h3>
           <div className="space-y-2">
-            {sideB.map((t) => (
-              <TweetCard key={t.id} id={t.id} text={t.text} reason={t.reason} author={t.author_username ? { username: t.author_username } : undefined} />
-            ))}
+            {sideB.map(renderTweet)}
           </div>
         </div>
       </div>
@@ -83,9 +108,7 @@ function TopicSidesReport({ content }: { content: Record<string, unknown> }) {
         <div>
           <h3 className="font-medium mb-3 text-muted-foreground">Ambiguous ({ambiguous.length})</h3>
           <div className="space-y-2">
-            {ambiguous.map((t) => (
-              <TweetCard key={t.id} id={t.id} text={t.text} reason={t.reason} author={t.author_username ? { username: t.author_username } : undefined} />
-            ))}
+            {ambiguous.map(renderTweet)}
           </div>
         </div>
       )}

@@ -84,7 +84,17 @@ export default function Topic() {
       const buildTweetData = (ids: string[]) => ids.map(id => {
         const t = tweetMap.get(id);
         const c = analysisResults.classifications.find(x => x.tweet_id === id);
-        return t ? { id: t.id, text: t.text, author_username: t.author_username, reason: c?.reason } : null;
+        return t ? { 
+          id: t.id, 
+          text: t.text, 
+          author_username: t.author_username,
+          author_name: t.author_name,
+          author_profile_image: t.author_profile_image,
+          like_count: t.like_count,
+          retweet_count: t.retweet_count,
+          impression_count: t.impression_count,
+          reason: c?.reason 
+        } : null;
       }).filter(Boolean);
       
       const sideA = analysisResults.classifications.filter(c => c.side === 'a').map(c => c.tweet_id);
