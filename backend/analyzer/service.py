@@ -1,5 +1,11 @@
 """
 Analyzer service - scans accounts for keyword matches and assigns camp scores.
+
+Flow:
+1. Find tweets/bios containing keywords (text matching)
+2. Run sentiment analysis on those matches (Grok LLM)
+3. Filter matches based on expected_sentiment
+4. Compute final scores
 """
 
 import re
@@ -20,15 +26,12 @@ class AnalyzerService:
     def __init__(self, db: Session):
         self.db = db
 
-    def _find_matches(self, text: str, keywords: List[Keyword], sentiment: str = None) -> List[Tuple[Keyword, int]]:
+    def _find_text_matches(self, text: str, keywords: List[Keyword]) -> List[Tuple[Keyword, int]]:
         """
-        Find all keyword matches in text.
+        Find all keyword matches in text (pure text matching, ignores sentiment).
         Returns list of (keyword, count) tuples.
         
         Uses word boundary matching to avoid false positives like "again" matching "AI".
-        
-        If sentiment is provided, only returns keywords where expected_sentiment matches
-        (or expected_sentiment is 'any').
         """
         if not text:
             return []
@@ -36,21 +39,27 @@ class AnalyzerService:
         matches = []
         for kw in keywords:
             # Use word boundaries to avoid partial matches
-            # \b matches word boundaries (start/end of word)
             pattern = r'\b' + re.escape(kw.term) + r'\b'
             flags = 0 if kw.case_sensitive else re.IGNORECASE
             found = re.findall(pattern, text, flags)
             if found:
-                # Check sentiment filter
-                # If sentiment is None (e.g., bio), only match keywords with expected_sentiment='any'
-                # If sentiment is provided, check if it matches expected_sentiment
-                if kw.expected_sentiment != "any":
-                    if sentiment is None:
-                        continue  # No sentiment available, skip non-'any' keywords
-                    if kw.expected_sentiment != sentiment:
-                        continue  # Sentiment doesn't match expectation, skip
                 matches.append((kw, len(found)))
         return matches
+
+    def _filter_by_sentiment(self, matches: List[Tuple[Keyword, int]], sentiment: str) -> List[Tuple[Keyword, int]]:
+        """
+        Filter keyword matches by expected_sentiment.
+        - 'any' keywords always pass
+        - 'positive'/'negative' keywords only pass if sentiment matches
+        """
+        if not sentiment:
+            # No sentiment available - only keep 'any' keywords
+            return [(kw, count) for kw, count in matches if kw.expected_sentiment == "any"]
+        
+        return [
+            (kw, count) for kw, count in matches
+            if kw.expected_sentiment == "any" or kw.expected_sentiment == sentiment
+        ]
 
     def _compute_score(self, matches: List[Tuple[Keyword, int]]) -> float:
         """Compute weighted score from matches."""
@@ -59,10 +68,15 @@ class AnalyzerService:
     def analyze_account(self, account: Account) -> Dict[int, dict]:
         """
         Analyze a single account across all camps.
-        Returns dict of camp_id -> analysis results.
         
-        For tweets with sentiment analyzed, only counts keywords where
-        expected_sentiment matches the tweet's actual sentiment.
+        Assumes sentiment analysis has already been run (via analyze_all_accounts).
+        
+        Flow:
+        1. Find text matches in tweets/bios
+        2. Filter by expected_sentiment (using saved sentiment)
+        3. Compute scores
+        
+        Returns dict of camp_id -> analysis results.
         """
         camps = self.db.query(Camp).all()
         results = {}
@@ -73,19 +87,22 @@ class AnalyzerService:
             if not keywords:
                 continue
 
-            # Analyze bio - use bio_sentiment if available
-            bio_matches = self._find_matches(account.description or "", keywords, sentiment=account.bio_sentiment)
+            # --- BIO ANALYSIS ---
+            bio_text_matches = self._find_text_matches(account.description or "", keywords)
+            bio_matches = self._filter_by_sentiment(bio_text_matches, account.bio_sentiment)
             bio_score = self._compute_score(bio_matches) * 2  # Bio gets 2x weight
 
-            # Analyze each tweet individually and track matches
-            # Pass tweet's sentiment to filter keywords by expected_sentiment
+            # --- TWEET ANALYSIS ---
             tweet_score = 0.0
             tweet_matches_agg = {}
             matched_tweet_ids = []
             
             for tweet in tweets:
-                # Pass tweet sentiment to filter by expected_sentiment
-                matches = self._find_matches(tweet.text, keywords, sentiment=tweet.sentiment)
+                text_matches = self._find_text_matches(tweet.text, keywords)
+                if not text_matches:
+                    continue
+                
+                matches = self._filter_by_sentiment(text_matches, tweet.sentiment)
                 if matches:
                     matched_tweet_ids.append((tweet.id, matches))
                     for kw, count in matches:
@@ -168,7 +185,20 @@ class AnalyzerService:
         return saved_scores
 
     def analyze_all_accounts(self) -> Dict[str, int]:
-        """Analyze all accounts in the database."""
+        """Analyze all accounts in the database.
+        
+        Flow:
+        1. Run sentiment analysis on all tweets/bios with keyword matches (batched)
+        2. Compute keyword scores for each account (sentiment now available)
+        """
+        # Step 1: Run sentiment analysis on anything that needs it
+        from backend.analyzer.sentiment import SentimentAnalyzer
+        sentiment_analyzer = SentimentAnalyzer(self.db)
+        print("Running sentiment analysis on keyword-matching content...")
+        sentiment_result = sentiment_analyzer.analyze_all()
+        print(f"  Sentiment: {sentiment_result}")
+        
+        # Step 2: Now compute scores for all accounts
         accounts = self.db.query(Account).all()
         stats = {"analyzed": 0, "total_scores": 0}
 
