@@ -246,6 +246,24 @@ function SummaryCard({ username, account }: { username: string; account: { name:
             {mutation.error instanceof Error ? mutation.error.message : 'Failed to generate summary'}
           </p>
         )}
+        
+        {previousReports && previousReports.reports.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <h3 className="text-xs font-medium text-muted-foreground mb-2">Previous Summaries</h3>
+            <div className="space-y-1">
+              {previousReports.reports.map((r) => (
+                <Link
+                  key={r.id}
+                  to={`/reports/${r.id}`}
+                  className="block text-sm text-foreground hover:text-primary truncate"
+                >
+                  {r.title || 'Untitled'} <span className="text-muted-foreground text-xs">{r.created_at && new Date(r.created_at).toLocaleDateString()}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+        
         <TopicsSettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
       </div>
     );
