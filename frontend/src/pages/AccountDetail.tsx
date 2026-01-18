@@ -17,8 +17,8 @@ import type { AccountSummary, Topic } from '../api';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-      <h2 className="text-lg font-semibold text-white mb-4">{title}</h2>
+    <div className="bg-card rounded-lg p-6 border border-border">
+      <h2 className="text-lg font-semibold text-foreground mb-4">{title}</h2>
       {children}
     </div>
   );
@@ -28,16 +28,16 @@ function AccountCard({ account }: { account: any }) {
   return (
     <Link
       to={`/accounts/${account.username}`}
-      className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors"
+      className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
     >
       {account.profile_image_url ? (
         <img src={account.profile_image_url} alt="" className="w-8 h-8 rounded-full" />
       ) : (
-        <div className="w-8 h-8 rounded-full bg-gray-700" />
+        <div className="w-8 h-8 rounded-full bg-muted" />
       )}
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-white truncate">{account.name}</div>
-        <div className="text-xs text-gray-400">@{account.username}</div>
+        <div className="text-sm font-medium text-foreground truncate">{account.name}</div>
+        <div className="text-xs text-muted-foreground">@{account.username}</div>
       </div>
     </Link>
   );
@@ -295,8 +295,8 @@ export default function AccountDetail() {
     enabled: !!username,
   });
 
-  if (isLoading) return <div className="text-gray-400">Loading...</div>;
-  if (error) return <div className="text-red-400">Account not found</div>;
+  if (isLoading) return <div className="text-muted-foreground">Loading...</div>;
+  if (error) return <div className="text-destructive">Account not found</div>;
   if (!account) return null;
 
   return (
@@ -310,86 +310,85 @@ export default function AccountDetail() {
             className="w-24 h-24 rounded-full"
           />
         ) : (
-          <div className="w-24 h-24 rounded-full bg-gray-700" />
+          <div className="w-24 h-24 rounded-full bg-muted" />
         )}
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-white">{account.name}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{account.name}</h1>
             {account.is_seed && (
-              <span className="px-2 py-1 text-xs rounded bg-purple-600 text-white">SEED</span>
+              <span className="px-2 py-1 text-xs rounded bg-primary text-primary-foreground">SEED</span>
             )}
-            {account.verified && <span className="text-blue-400 text-xl">✓</span>}
+            {account.verified && <span className="text-primary text-xl">✓</span>}
           </div>
-          <div className="text-gray-400">@{account.username}</div>
+          <div className="text-muted-foreground">@{account.username}</div>
           {account.description && (
-            <p className="text-gray-300 mt-2">{account.description}</p>
+            <p className="text-foreground/80 mt-2">{account.description}</p>
           )}
           {account.location && (
-            <p className="text-gray-500 text-sm mt-1">📍 {account.location}</p>
+            <p className="text-muted-foreground text-sm mt-1">{account.location}</p>
           )}
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800">
-          <div className="text-2xl font-bold text-white">
+        <div className="bg-card rounded-lg p-4 text-center border border-border">
+          <div className="text-2xl font-bold text-foreground">
             {account.followers_count.toLocaleString()}
           </div>
-          <div className="text-sm text-gray-400">Followers</div>
+          <div className="text-sm text-muted-foreground">Followers</div>
         </div>
-        <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800">
-          <div className="text-2xl font-bold text-white">
+        <div className="bg-card rounded-lg p-4 text-center border border-border">
+          <div className="text-2xl font-bold text-foreground">
             {account.following_count.toLocaleString()}
           </div>
-          <div className="text-sm text-gray-400">Following</div>
+          <div className="text-sm text-muted-foreground">Following</div>
         </div>
-        <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800">
-          <div className="text-2xl font-bold text-white">
+        <div className="bg-card rounded-lg p-4 text-center border border-border">
+          <div className="text-2xl font-bold text-foreground">
             {account.tweet_count.toLocaleString()}
           </div>
-          <div className="text-sm text-gray-400">Tweets</div>
+          <div className="text-sm text-muted-foreground">Tweets</div>
         </div>
-        <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800">
-          <div className="text-2xl font-bold text-white">
+        <div className="bg-card rounded-lg p-4 text-center border border-border">
+          <div className="text-2xl font-bold text-foreground">
             {account.like_count.toLocaleString()}
           </div>
-          <div className="text-sm text-gray-400">Likes</div>
+          <div className="text-sm text-muted-foreground">Likes</div>
         </div>
       </div>
 
       {/* Camp Analysis */}
       {analysis?.scores && analysis.scores.length > 0 && (
-        <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-          <h2 className="text-lg font-semibold text-white mb-4">Camp Analysis</h2>
+        <div className="bg-card rounded-lg p-6 border border-border">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Camp Analysis</h2>
           <div className="grid md:grid-cols-2 gap-4">
             {analysis.scores.map((score) => (
               <div
                 key={score.camp_id}
-                className="p-4 rounded-lg border"
-                style={{ borderColor: score.camp_color + '40', backgroundColor: score.camp_color + '10' }}
+                className="p-4 rounded-lg border border-border bg-secondary/30"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-white">{score.camp_name}</span>
-                  <span className="text-2xl font-bold" style={{ color: score.camp_color }}>
+                  <span className="font-medium text-foreground">{score.camp_name}</span>
+                  <span className="text-2xl font-bold text-primary">
                     {score.score.toFixed(1)}
                   </span>
                 </div>
-                <div className="text-xs text-gray-400 mb-2">
+                <div className="text-xs text-muted-foreground mb-2">
                   Bio: {score.bio_score.toFixed(1)} | Tweets: {score.tweet_score.toFixed(1)}
                 </div>
                 {(score.bio_matches.length > 0 || score.tweet_matches.length > 0) && (
-                  <div className="mt-2 pt-2 border-t border-gray-700">
-                    <div className="text-xs text-gray-500">Matches:</div>
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <div className="text-xs text-muted-foreground">Matches:</div>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {score.bio_matches.map((m, i) => (
-                        <span key={`bio-${i}`} className="px-2 py-0.5 text-xs rounded bg-gray-800 text-gray-300">
-                          {m.term} ×{m.count}
+                        <span key={`bio-${i}`} className="px-2 py-0.5 text-xs rounded bg-secondary text-foreground">
+                          {m.term} x{m.count}
                         </span>
                       ))}
                       {score.tweet_matches.slice(0, 5).map((m, i) => (
-                        <span key={`tweet-${i}`} className="px-2 py-0.5 text-xs rounded bg-gray-800 text-gray-300">
-                          {m.term} ×{m.count}
+                        <span key={`tweet-${i}`} className="px-2 py-0.5 text-xs rounded bg-secondary text-foreground">
+                          {m.term} x{m.count}
                         </span>
                       ))}
                     </div>
@@ -409,16 +408,16 @@ export default function AccountDetail() {
         {/* Tweets */}
         <Section title={`Tweets (${tweets?.total || 0} in DB)`}>
           {tweets?.tweets.length === 0 ? (
-            <p className="text-gray-500 text-sm">No tweets scraped yet</p>
+            <p className="text-muted-foreground text-sm">No tweets scraped yet</p>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {tweets?.tweets.map((tweet) => (
-                <div key={tweet.id} className="p-3 rounded-lg bg-gray-800/50 text-sm">
-                  <p className="text-gray-300">{tweet.text}</p>
-                  <div className="flex gap-4 mt-2 text-xs text-gray-500">
-                    <span>❤️ {tweet.like_count}</span>
-                    <span>🔁 {tweet.retweet_count}</span>
-                    <span>💬 {tweet.reply_count}</span>
+                <div key={tweet.id} className="p-3 rounded-lg bg-secondary/50 text-sm">
+                  <p className="text-foreground/80">{tweet.text}</p>
+                  <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                    <span>{tweet.like_count} likes</span>
+                    <span>{tweet.retweet_count} retweets</span>
+                    <span>{tweet.reply_count} replies</span>
                   </div>
                 </div>
               ))}
@@ -429,7 +428,7 @@ export default function AccountDetail() {
         {/* Following */}
         <Section title={`Following (${following?.total || 0} in DB)`}>
           {following?.accounts.length === 0 ? (
-            <p className="text-gray-500 text-sm">None in database</p>
+            <p className="text-muted-foreground text-sm">None in database</p>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {following?.accounts.map((a) => (
@@ -442,7 +441,7 @@ export default function AccountDetail() {
         {/* Followers */}
         <Section title={`Followers (${followers?.total || 0} in DB)`}>
           {followers?.accounts.length === 0 ? (
-            <p className="text-gray-500 text-sm">None in database</p>
+            <p className="text-muted-foreground text-sm">None in database</p>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {followers?.accounts.map((a) => (
