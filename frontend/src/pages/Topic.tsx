@@ -134,7 +134,7 @@ export default function Topic() {
             {searchMutation.isPending ? (
               <>
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                Searching...
+                Searching tweets and replies...
               </>
             ) : (
               <>
@@ -143,6 +143,12 @@ export default function Topic() {
               </>
             )}
           </button>
+          
+          {searchMutation.isPending && (
+            <p className="text-xs text-muted-foreground text-center">
+              This may take 15-30 seconds while Grok searches for tweets and their top replies.
+            </p>
+          )}
           
           {searchMutation.isError && (
             <p className="text-destructive text-sm text-center">

@@ -765,53 +765,68 @@ def search_topic(
         x_client = XClient()
         scraper = ScraperService(db)
         
-        # Search for tweets about the topic
-        search_result = topic_service.search_topic(request.query, limit=10)
-        tweet_urls = [t["url"] for t in search_result.get("tweets", []) if t.get("url")]
+        # Search for tweets AND their top replies in one Grok call
+        search_result = topic_service.search_topic_with_replies(request.query, limit=10)
+        tweets_data = search_result.get("tweets", [])
         
-        # Extract tweet IDs and fetch full tweet data
-        tweet_ids = extract_tweet_ids_from_urls(tweet_urls)
-        if not tweet_ids:
+        if not tweets_data:
             return schemas.TopicSearchResponse(query=request.query, tweets=[])
         
-        # Fetch tweets from X API
-        fetched_tweets = x_client.get_tweets_by_ids(tweet_ids)
+        # Collect all tweet IDs (main tweets + replies)
+        all_tweet_urls = []
+        reply_map = {}  # main_tweet_id -> reply_url
         
-        # Store tweets and build response
-        results = []
-        for tweet_data in fetched_tweets:
-            # Fetch and upsert author first (required due to FK constraint)
-            author = db.query(Account).filter(Account.id == tweet_data.account_id).first()
-            if not author:
-                author_data = x_client.get_user_by_id(tweet_data.account_id)
+        for t in tweets_data:
+            if t.get("url"):
+                all_tweet_urls.append(t["url"])
+                main_ids = extract_tweet_ids_from_urls([t["url"]])
+                if main_ids and t.get("top_reply_url"):
+                    reply_map[main_ids[0]] = t["top_reply_url"]
+                    all_tweet_urls.append(t["top_reply_url"])
+        
+        # Extract all tweet IDs and fetch in one batch
+        all_tweet_ids = extract_tweet_ids_from_urls(all_tweet_urls)
+        if not all_tweet_ids:
+            return schemas.TopicSearchResponse(query=request.query, tweets=[])
+        
+        # Fetch all tweets from X API in one call
+        fetched_tweets = x_client.get_tweets_by_ids(all_tweet_ids)
+        tweet_by_id = {t.id: t for t in fetched_tweets}
+        
+        # Collect unique author IDs and fetch them
+        author_ids = list(set(t.account_id for t in fetched_tweets))
+        for author_id in author_ids:
+            if not db.query(Account).filter(Account.id == author_id).first():
+                author_data = x_client.get_user_by_id(author_id)
                 if author_data:
                     scraper._upsert_account(author_data, is_seed=False)
-                    db.commit()
-                    author = db.query(Account).filter(Account.id == tweet_data.account_id).first()
-            
+        db.commit()
+        
+        # Store all tweets
+        for tweet_data in fetched_tweets:
             scraper._upsert_tweet(tweet_data)
+        db.commit()
+        
+        # Build response - only include main tweets (not replies) at top level
+        main_tweet_ids = extract_tweet_ids_from_urls([t["url"] for t in tweets_data if t.get("url")])
+        results = []
+        
+        for tweet_id in main_tweet_ids:
+            tweet_data = tweet_by_id.get(tweet_id)
+            if not tweet_data:
+                continue
+                
+            author = db.query(Account).filter(Account.id == tweet_data.account_id).first()
             
-            # Get top reply for this tweet
-            tweet_url = f"https://x.com/user/status/{tweet_data.id}"
-            reply_url = topic_service.get_top_reply(tweet_url)
-            
+            # Get top reply if we have one
             top_reply = None
+            reply_url = reply_map.get(tweet_id)
             if reply_url:
                 reply_ids = extract_tweet_ids_from_urls([reply_url])
                 if reply_ids:
-                    reply_tweets = x_client.get_tweets_by_ids(reply_ids)
-                    if reply_tweets:
-                        reply_data = reply_tweets[0]
-                        # Fetch and upsert reply author
+                    reply_data = tweet_by_id.get(reply_ids[0])
+                    if reply_data:
                         reply_author = db.query(Account).filter(Account.id == reply_data.account_id).first()
-                        if not reply_author:
-                            reply_author_data = x_client.get_user_by_id(reply_data.account_id)
-                            if reply_author_data:
-                                scraper._upsert_account(reply_author_data, is_seed=False)
-                                db.commit()
-                                reply_author = db.query(Account).filter(Account.id == reply_data.account_id).first()
-                        
-                        scraper._upsert_tweet(reply_data)
                         top_reply = schemas.TopicTweetResult(
                             id=reply_data.id,
                             text=reply_data.text,
@@ -835,7 +850,6 @@ def search_topic(
                 top_reply=top_reply,
             ))
         
-        db.commit()
         return schemas.TopicSearchResponse(query=request.query, tweets=results)
     
     except Exception as e:

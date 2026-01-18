@@ -37,22 +37,24 @@ class TopicService:
             raise ValueError("XAI_API_KEY environment variable not set")
         self.client = Client(api_key=api_key)
 
-    def search_topic(self, query: str, limit: int = 10) -> dict:
-        """Search for top tweets about a topic and their top replies."""
+    def search_topic_with_replies(self, query: str, limit: int = 10) -> dict:
+        """Search for top tweets about a topic AND their top replies in one call."""
         
         prompt = f"""Find the top {limit} most popular/viral tweets about: "{query}"
+
+For EACH tweet, also find its top/most popular reply.
 
 Return the results as JSON with this exact format:
 {{
   "tweets": [
     {{
       "url": "https://x.com/username/status/123...",
-      "summary": "brief description of the tweet"
+      "top_reply_url": "https://x.com/username/status/456..." or null if no notable reply
     }}
   ]
 }}
 
-Focus on tweets with high engagement (likes, retweets, replies). Use x_search to find them."""
+Focus on tweets with high engagement (likes, retweets, replies). Use x_search to find them and their top replies."""
 
         chat = self.client.chat.create(
             model="grok-4-1-fast",
@@ -76,43 +78,6 @@ Focus on tweets with high engagement (likes, retweets, replies). Use x_search to
             result = {"tweets": [], "raw_response": content}
         
         return result
-
-    def get_top_reply(self, tweet_url: str) -> Optional[str]:
-        """Get the top reply URL for a tweet."""
-        
-        prompt = f"""What is the top/most popular reply to this tweet: {tweet_url}
-
-Return ONLY the URL of the top reply in this JSON format:
-{{
-  "reply_url": "https://x.com/username/status/123..."
-}}
-
-If there are no replies or you can't find one, return:
-{{
-  "reply_url": null
-}}"""
-
-        chat = self.client.chat.create(
-            model="grok-4-1-fast",
-            tools=[x_search()],
-        )
-        chat.append(user(prompt))
-        response = chat.sample()
-        
-        content = response.content if hasattr(response, 'content') else str(response)
-        
-        # Parse JSON
-        json_str = content
-        if "```json" in content:
-            json_str = content.split("```json")[1].split("```")[0].strip()
-        elif "```" in content:
-            json_str = content.split("```")[1].split("```")[0].strip()
-        
-        try:
-            result = json.loads(json_str)
-            return result.get("reply_url")
-        except json.JSONDecodeError:
-            return None
 
     def analyze_sides(
         self,
