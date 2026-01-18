@@ -89,7 +89,7 @@ Focus on tweets with high engagement (likes, retweets, replies). Use x_search to
         """Analyze tweets and classify them into sides.
         
         Args:
-            tweets_data: List of {"id": int, "text": str, "is_reply": bool, "parent_id": int|None}
+            tweets_data: List of {"id": int, "text": str}
             side_a_name: Name for side A
             side_b_name: Name for side B  
             prompt: User's prompt to help classify
@@ -103,42 +103,35 @@ Focus on tweets with high engagement (likes, retweets, replies). Use x_search to
             for t in tweets_data
         ])
         
-        analysis_prompt = f"""Classify each of the following tweets into one of two sides based on this criteria:
+        analysis_prompt = f"""You must classify each tweet into EXACTLY one of two sides. Only use "ambiguous" if the tweet is completely unrelated to the topic or truly impossible to classify.
 
-Side A: "{side_a_name}"
-Side B: "{side_b_name}"
+The two sides are:
+- Side A = "{side_a_name}"
+- Side B = "{side_b_name}"
 
-Classification guidance from the user:
+How to decide which side:
 {prompt}
+
+IMPORTANT: Most tweets should be classifiable into side A or side B. Be decisive. Look for any indication of position, tone, or sentiment. Even subtle hints count.
 
 Here are the tweets to classify:
 
 {tweets_text}
 
-For each tweet, determine which side it belongs to (or "ambiguous" if unclear) and provide a brief reason.
-
-Return JSON in this exact format:
+Return JSON with a classification for EVERY tweet ID listed above:
 {{
   "classifications": [
-    {{
-      "tweet_id": 123,
-      "side": "a",
-      "reason": "This tweet supports X because..."
-    }},
-    {{
-      "tweet_id": 456,
-      "side": "b", 
-      "reason": "This tweet opposes X because..."
-    }},
-    {{
-      "tweet_id": 789,
-      "side": "ambiguous",
-      "reason": "This tweet doesn't clearly take a side..."
-    }}
+    {{"tweet_id": 123, "side": "a", "reason": "brief reason"}},
+    {{"tweet_id": 456, "side": "b", "reason": "brief reason"}}
   ]
-}}"""
+}}
 
-        chat = self.client.chat.create(model="grok-4-1-fast")
+Valid values for "side": "a", "b", or "ambiguous" (use sparingly)"""
+
+        chat = self.client.chat.create(
+            model="grok-4-1-fast",
+            tools=[x_search()],
+        )
         chat.append(user(analysis_prompt))
         response = chat.sample()
         
