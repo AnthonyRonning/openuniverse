@@ -137,23 +137,22 @@ class ScraperService:
     def scrape_account(
         self,
         username: str,
-        include_tweets: bool = True,
         include_following: bool = True,
         include_followers: bool = True,
         depth: int = 1,  # How deep to go (1 = just immediate connections)
     ) -> Tuple[Optional[Account], dict]:
         """
         Scrape an account and optionally its network.
+        NOTE: Tweets are NOT fetched during scraping (expensive API).
+        Use fetch_tweets_for_account() separately if needed.
         
         Returns:
             Tuple of (Account or None, stats dict)
         """
         stats = {
             "account_scraped": False,
-            "tweets_added": 0,
             "following_added": 0,
             "followers_added": 0,
-            "connections_scraped": 0,
             "errors": [],
         }
 
@@ -169,20 +168,7 @@ class ScraperService:
         stats["account_scraped"] = True
         print(f"  Saved account: {account}")
 
-        # 3. Fetch tweets
-        if include_tweets:
-            print(f"  Fetching tweets (max {config.MAX_TWEETS_PER_ACCOUNT})...")
-            tweets = self.client.get_user_tweets(
-                user_data.id, 
-                max_results=config.MAX_TWEETS_PER_ACCOUNT
-            )
-            for tweet in tweets:
-                self._upsert_tweet(tweet)
-                stats["tweets_added"] += 1
-            self.db.commit()
-            print(f"  Saved {stats['tweets_added']} tweets")
-
-        # 4. Fetch following (accounts this user follows)
+        # 3. Fetch following (accounts this user follows)
         if include_following and depth > 0:
             print(f"  Fetching following (max {config.MAX_FOLLOWING_TO_FETCH})...")
             following = self.client.get_following(
@@ -198,7 +184,7 @@ class ScraperService:
             self.db.commit()
             print(f"  Saved {stats['following_added']} following")
 
-        # 5. Fetch followers (accounts that follow this user)
+        # 4. Fetch followers (accounts that follow this user)
         if include_followers and depth > 0:
             print(f"  Fetching followers (max {config.MAX_FOLLOWERS_TO_FETCH})...")
             followers = self.client.get_followers(
@@ -214,44 +200,20 @@ class ScraperService:
             self.db.commit()
             print(f"  Saved {stats['followers_added']} followers")
 
-        # 6. Optionally scrape tweets for discovered accounts
-        if depth > 0 and include_tweets:
-            # Get all accounts we just discovered that haven't had tweets scraped
-            discovered_ids = []
-            
-            if include_following:
-                following = self.client.get_following(
-                    user_data.id,
-                    max_results=config.MAX_FOLLOWING_TO_FETCH
-                )
-                discovered_ids.extend([u.id for u in following])
-            
-            if include_followers:
-                followers = self.client.get_followers(
-                    user_data.id,
-                    max_results=config.MAX_FOLLOWERS_TO_FETCH
-                )
-                discovered_ids.extend([u.id for u in followers])
-            
-            # Remove duplicates
-            discovered_ids = list(set(discovered_ids))
-            
-            print(f"  Fetching tweets for {len(discovered_ids)} discovered accounts...")
-            for disc_id in discovered_ids:
-                disc_account = self.db.query(Account).filter(Account.id == disc_id).first()
-                if disc_account:
-                    tweets = self.client.get_user_tweets(
-                        disc_id,
-                        max_results=config.MAX_TWEETS_PER_ACCOUNT
-                    )
-                    for tweet in tweets:
-                        self._upsert_tweet(tweet)
-                    stats["connections_scraped"] += 1
-            
-            self.db.commit()
-            print(f"  Scraped tweets for {stats['connections_scraped']} connections")
-
         return account, stats
+    
+    def fetch_tweets_for_account(self, account_id: int, max_results: int = 25) -> int:
+        """
+        Fetch tweets for a specific account. Use sparingly - costs $0.005/tweet!
+        
+        Returns:
+            Number of tweets fetched
+        """
+        tweets = self.client.get_user_tweets(account_id, max_results=max_results)
+        for tweet in tweets:
+            self._upsert_tweet(tweet)
+        self.db.commit()
+        return len(tweets)
 
     def scrape_by_id(self, user_id: int) -> Tuple[Optional[Account], dict]:
         """Scrape an account by Twitter ID."""
