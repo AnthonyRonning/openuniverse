@@ -161,54 +161,6 @@ def get_account_followers(
     return schemas.AccountList(accounts=accounts, total=len(accounts))
 
 
-@app.post("/api/accounts/{username}/following/fetch")
-def fetch_account_following(
-    username: str,
-    db: Session = Depends(get_db),
-):
-    """Fetch top 10 accounts this user follows from X API."""
-    account = db.query(Account).filter(Account.username == username).first()
-    if not account:
-        raise HTTPException(status_code=404, detail=f"Account @{username} not found")
-    
-    x_client = XClient()
-    scraper = ScraperService(db)
-    
-    following = x_client.get_following(account.id, max_results=10)
-    added = 0
-    for user_data in following:
-        scraper._upsert_account(user_data, is_seed=False)
-        scraper._upsert_follow(account.id, user_data.id)
-        added += 1
-    
-    db.commit()
-    return {"fetched": added}
-
-
-@app.post("/api/accounts/{username}/followers/fetch")
-def fetch_account_followers(
-    username: str,
-    db: Session = Depends(get_db),
-):
-    """Fetch top 10 accounts that follow this user from X API."""
-    account = db.query(Account).filter(Account.username == username).first()
-    if not account:
-        raise HTTPException(status_code=404, detail=f"Account @{username} not found")
-    
-    x_client = XClient()
-    scraper = ScraperService(db)
-    
-    followers = x_client.get_followers(account.id, max_results=10)
-    added = 0
-    for user_data in followers:
-        scraper._upsert_account(user_data, is_seed=False)
-        scraper._upsert_follow(user_data.id, account.id)
-        added += 1
-    
-    db.commit()
-    return {"fetched": added}
-
-
 # === Scraping ===
 
 @app.post("/api/scrape", response_model=schemas.ScrapeResponse)

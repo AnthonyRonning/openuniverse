@@ -89,16 +89,6 @@ export async function fetchAccountFollowers(username: string, sort: 'recent' | '
   return res.json();
 }
 
-export async function fetchFollowingFromAPI(username: string): Promise<{ fetched: number }> {
-  const res = await fetch(`${API_BASE}/accounts/${username}/following/fetch`, { method: 'POST' });
-  return res.json();
-}
-
-export async function fetchFollowersFromAPI(username: string): Promise<{ fetched: number }> {
-  const res = await fetch(`${API_BASE}/accounts/${username}/followers/fetch`, { method: 'POST' });
-  return res.json();
-}
-
 export async function fetchGraph(): Promise<GraphData> {
   const res = await fetch(`${API_BASE}/graph`);
   return res.json();

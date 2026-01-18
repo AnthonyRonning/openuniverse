@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
-import { FileDown, ExternalLink, RefreshCw } from 'lucide-react';
+import { FileDown, ExternalLink } from 'lucide-react';
 import {
   fetchAccount,
   fetchAccountTweets,
   fetchAccountFollowing,
   fetchAccountFollowers,
-  fetchFollowingFromAPI,
-  fetchFollowersFromAPI,
   fetchAccountAnalysis,
   generateAccountSummary,
   generateAccountReport,
@@ -312,7 +310,6 @@ function SummaryCard({ username, account }: { username: string; account: { name:
 
 export default function AccountDetail() {
   const { username } = useParams<{ username: string }>();
-  const queryClient = useQueryClient();
   const [tweetSort, setTweetSort] = useState<'latest' | 'top'>('latest');
   const [followingSort, setFollowingSort] = useState<'recent' | 'top'>('recent');
   const [followersSort, setFollowersSort] = useState<'recent' | 'top'>('recent');
@@ -339,20 +336,6 @@ export default function AccountDetail() {
     queryKey: ['account-followers', username, followersSort],
     queryFn: () => fetchAccountFollowers(username!, followersSort),
     enabled: !!username,
-  });
-
-  const fetchFollowingMutation = useMutation({
-    mutationFn: () => fetchFollowingFromAPI(username!),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['account-following', username] });
-    },
-  });
-
-  const fetchFollowersMutation = useMutation({
-    mutationFn: () => fetchFollowersFromAPI(username!),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['account-followers', username] });
-    },
   });
 
   const { data: analysis } = useQuery({
@@ -553,14 +536,6 @@ export default function AccountDetail() {
                   Top
                 </button>
               </div>
-              <button
-                onClick={() => fetchFollowingMutation.mutate()}
-                disabled={fetchFollowingMutation.isPending}
-                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded transition-colors"
-                title="Fetch 10 from X"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${fetchFollowingMutation.isPending ? 'animate-spin' : ''}`} />
-              </button>
             </div>
           </div>
           <div className="p-3">
@@ -595,14 +570,6 @@ export default function AccountDetail() {
                   Top
                 </button>
               </div>
-              <button
-                onClick={() => fetchFollowersMutation.mutate()}
-                disabled={fetchFollowersMutation.isPending}
-                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded transition-colors"
-                title="Fetch 10 from X"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${fetchFollowersMutation.isPending ? 'animate-spin' : ''}`} />
-              </button>
             </div>
           </div>
           <div className="p-3">
