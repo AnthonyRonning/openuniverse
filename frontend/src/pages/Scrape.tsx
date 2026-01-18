@@ -118,15 +118,15 @@ export default function Scrape() {
           </li>
           <li className="flex items-start gap-1.5">
             <span className="text-primary">+</span>
-            Recent tweets (up to 5 for prototype)
+            Recent tweets (up to 5)
           </li>
           <li className="flex items-start gap-1.5">
             <span className="text-primary">+</span>
-            Following accounts (up to 3)
+            Following accounts (up to 100)
           </li>
           <li className="flex items-start gap-1.5">
             <span className="text-primary">+</span>
-            Follower accounts (up to 3)
+            Follower accounts (up to 100)
           </li>
         </ul>
       </div>
