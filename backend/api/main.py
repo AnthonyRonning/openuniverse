@@ -2,13 +2,14 @@
 FastAPI application for OpenCCP.
 """
 
+import re
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
 from backend.db import get_db, Account, Tweet, Follow, Keyword, Camp, AccountCampScore, Topic
-from backend.scraper import ScraperService
+from backend.scraper import ScraperService, XClient
 from backend.analyzer import AnalyzerService, SummaryService
 from backend.api import schemas
 
@@ -630,12 +631,57 @@ def generate_account_summary(
 
         # Parse the result into the expected format
         topics_data = result.get("topics", {})
+        
+        # Extract all tweet IDs from example URLs
+        all_tweet_ids = []
+        tweet_id_pattern = re.compile(r'status/(\d+)')
+        for sentiment in topics_data.values():
+            for url in sentiment.get("examples", []):
+                match = tweet_id_pattern.search(url)
+                if match:
+                    all_tweet_ids.append(int(match.group(1)))
+        
+        # Fetch tweets from X API and store them
+        tweet_map = {}
+        if all_tweet_ids:
+            try:
+                x_client = XClient()
+                fetched_tweets = x_client.get_tweets_by_ids(all_tweet_ids)
+                scraper = ScraperService(db)
+                for tweet_data in fetched_tweets:
+                    scraper._upsert_tweet(tweet_data)
+                    # Query the tweet back to get the DB model
+                    tweet = db.query(Tweet).filter(Tweet.id == tweet_data.id).first()
+                    if tweet:
+                        tweet_map[tweet.id] = tweet
+                db.commit()
+            except Exception as e:
+                print(f"Warning: Could not fetch tweets: {e}")
+        
         parsed_topics = {}
         for topic_name, sentiment in topics_data.items():
+            examples = sentiment.get("examples", [])
+            # Get tweet objects for this topic's examples
+            topic_tweets = []
+            for url in examples:
+                match = tweet_id_pattern.search(url)
+                if match:
+                    tweet_id = int(match.group(1))
+                    if tweet_id in tweet_map:
+                        tweet = tweet_map[tweet_id]
+                        topic_tweets.append(schemas.SummaryTweet(
+                            id=tweet.id,
+                            text=tweet.text,
+                            like_count=tweet.like_count,
+                            retweet_count=tweet.retweet_count,
+                            twitter_created_at=tweet.twitter_created_at,
+                        ))
+            
             parsed_topics[topic_name] = schemas.TopicSentiment(
                 noticing=sentiment.get("noticing", False),
                 comment=sentiment.get("comment", ""),
-                examples=sentiment.get("examples", []),
+                examples=examples,
+                tweets=topic_tweets,
             )
 
         return schemas.SummaryResponse(username=username, topics=parsed_topics)
@@ -644,3 +690,63 @@ def generate_account_summary(
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate summary: {str(e)}")
+
+
+@app.post("/api/accounts/{username}/report")
+def generate_account_report(
+    username: str,
+    request: schemas.ReportRequest,
+    db: Session = Depends(get_db),
+):
+    """Generate a markdown report for an account based on summary and analysis data."""
+    try:
+        # Get account from DB
+        account = db.query(Account).filter(Account.username == username).first()
+        if not account:
+            raise HTTPException(status_code=404, detail=f"Account @{username} not found")
+        
+        account_data = {
+            "username": account.username,
+            "name": account.name,
+            "description": account.description,
+            "location": account.location,
+            "twitter_created_at": str(account.twitter_created_at) if account.twitter_created_at else None,
+            "followers_count": account.followers_count,
+            "following_count": account.following_count,
+            "tweet_count": account.tweet_count,
+        }
+        
+        # Convert summary data to dict format expected by generate_report
+        summary_data = {
+            "topics": {
+                name: {
+                    "noticing": topic.noticing,
+                    "comment": topic.comment,
+                    "tweets": [{"id": t.id, "text": t.text, "like_count": t.like_count, "retweet_count": t.retweet_count} for t in topic.tweets]
+                }
+                for name, topic in request.summary.topics.items()
+            }
+        }
+        
+        # Get analysis data if available
+        analysis_data = None
+        if request.include_camps:
+            analyzer = AnalyzerService(db)
+            scores = analyzer.get_account_scores(account.id)
+            if scores:
+                analysis_data = {
+                    "scores": [
+                        {"camp_name": s.camp.name, "score": s.score}
+                        for s in scores
+                    ]
+                }
+        
+        summary_service = SummaryService()
+        report = summary_service.generate_report(account_data, summary_data, analysis_data)
+        
+        return {"report": report}
+    
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate report: {str(e)}")

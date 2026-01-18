@@ -180,6 +180,23 @@ class XClient:
             print(f"Error fetching user {user_id}: {e}")
             return None
 
+    def get_tweets_by_ids(self, tweet_ids: List[int]) -> List[TweetData]:
+        """Fetch tweets by their IDs."""
+        if not tweet_ids:
+            return []
+        tweets = []
+        try:
+            response = self.client.posts.get_by_ids(
+                ids=[str(tid) for tid in tweet_ids],
+                tweet_fields=self.TWEET_FIELDS,
+            )
+            if response and response.data:
+                for tweet_data in response.data:
+                    tweets.append(self._parse_tweet(tweet_data))
+        except Exception as e:
+            print(f"Error fetching tweets by IDs: {e}")
+        return tweets
+
     def get_user_tweets(self, user_id: int, max_results: int = 5) -> List[TweetData]:
         """Fetch recent tweets for a user."""
         tweets = []

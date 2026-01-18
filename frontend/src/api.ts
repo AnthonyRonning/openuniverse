@@ -14,6 +14,7 @@ export interface Account {
   tweet_count: number;
   like_count: number;
   is_seed: boolean;
+  twitter_created_at: string | null;
 }
 
 export interface Tweet {
@@ -250,10 +251,19 @@ export async function deleteKeyword(campId: number, keywordId: number): Promise<
 }
 
 // Summary types and API
+export interface SummaryTweet {
+  id: number;
+  text: string;
+  like_count: number;
+  retweet_count: number;
+  twitter_created_at: string | null;
+}
+
 export interface TopicSentiment {
   noticing: boolean;
   comment: string;
   examples: string[];
+  tweets: SummaryTweet[];
 }
 
 export interface AccountSummary {
@@ -317,4 +327,22 @@ export async function generateAccountSummary(
     throw new Error(error.detail || 'Failed to generate summary');
   }
   return res.json();
+}
+
+export async function generateAccountReport(
+  username: string,
+  summary: AccountSummary,
+  includeCamps = true
+): Promise<string> {
+  const res = await fetch(`${API_BASE}/accounts/${username}/report`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ summary, include_camps: includeCamps }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.detail || 'Failed to generate report');
+  }
+  const data = await res.json();
+  return data.report;
 }
