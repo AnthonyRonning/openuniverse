@@ -21,7 +21,7 @@ def build_prompt(username: str, topics: List[str]) -> str:
 
 For each topic:
 1. Set "noticing" to true if they have discussed or shown awareness of this topic, false otherwise
-2. Write a brief "comment" describing their position on the topic (be terse but flavorful)
+2. Write a brief "comment" describing their position on the topic (be terse and concrete, max one sentence)
 3. Include "examples" with URLs to specific tweets that demonstrate their position (up to 3 per topic)
 
 If you cannot find evidence of their position on a topic, set noticing to false and explain in the comment that no relevant tweets were found.

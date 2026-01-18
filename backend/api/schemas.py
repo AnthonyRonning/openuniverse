@@ -319,10 +319,21 @@ class CampTweetWithSentiment(CampTweet):
 
 # === Summary Schemas ===
 
+class SummaryTweet(BaseModel):
+    id: int
+    text: str
+    like_count: int = 0
+    retweet_count: int = 0
+    twitter_created_at: Optional[datetime] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
 class TopicSentiment(BaseModel):
     noticing: bool
     comment: str
-    examples: List[str] = []
+    examples: List[str] = []  # Original URLs for reference
+    tweets: List[SummaryTweet] = []  # Fetched tweet data
 
 
 class SummaryRequest(BaseModel):

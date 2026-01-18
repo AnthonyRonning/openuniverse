@@ -250,10 +250,19 @@ export async function deleteKeyword(campId: number, keywordId: number): Promise<
 }
 
 // Summary types and API
+export interface SummaryTweet {
+  id: number;
+  text: string;
+  like_count: number;
+  retweet_count: number;
+  twitter_created_at: string | null;
+}
+
 export interface TopicSentiment {
   noticing: boolean;
   comment: string;
   examples: string[];
+  tweets: SummaryTweet[];
 }
 
 export interface AccountSummary {

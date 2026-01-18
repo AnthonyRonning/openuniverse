@@ -6,8 +6,12 @@ default:
 
 # Initialize the database schema
 db-init:
-    psql -h localhost -p 5433 -U openccp_user openccp < backend/db/schema.sql
-    psql -h localhost -p 5433 -U openccp_user openccp < backend/db/schema_camps.sql
+    just db-migrate
+
+# Run all schema migrations (safe to run multiple times)
+db-migrate:
+    #!/usr/bin/env bash
+    for f in backend/db/schema*.sql; do echo "Running $f"; psql -h localhost -p 5433 -U openccp_user openccp -f "$f"; done
 
 # Reset database (drop and recreate all tables)
 db-reset:

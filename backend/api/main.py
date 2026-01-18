@@ -2,13 +2,14 @@
 FastAPI application for OpenCCP.
 """
 
+import re
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
 from backend.db import get_db, Account, Tweet, Follow, Keyword, Camp, AccountCampScore, Topic
-from backend.scraper import ScraperService
+from backend.scraper import ScraperService, XClient
 from backend.analyzer import AnalyzerService, SummaryService
 from backend.api import schemas
 
@@ -630,12 +631,53 @@ def generate_account_summary(
 
         # Parse the result into the expected format
         topics_data = result.get("topics", {})
+        
+        # Extract all tweet IDs from example URLs
+        all_tweet_ids = []
+        tweet_id_pattern = re.compile(r'status/(\d+)')
+        for sentiment in topics_data.values():
+            for url in sentiment.get("examples", []):
+                match = tweet_id_pattern.search(url)
+                if match:
+                    all_tweet_ids.append(int(match.group(1)))
+        
+        # Fetch tweets from X API and store them
+        tweet_map = {}
+        if all_tweet_ids:
+            try:
+                x_client = XClient()
+                fetched_tweets = x_client.get_tweets_by_ids(all_tweet_ids)
+                scraper = ScraperService(db)
+                for tweet_data in fetched_tweets:
+                    tweet = scraper._upsert_tweet(tweet_data)
+                    tweet_map[tweet.id] = tweet
+            except Exception as e:
+                print(f"Warning: Could not fetch tweets: {e}")
+        
         parsed_topics = {}
         for topic_name, sentiment in topics_data.items():
+            examples = sentiment.get("examples", [])
+            # Get tweet objects for this topic's examples
+            topic_tweets = []
+            for url in examples:
+                match = tweet_id_pattern.search(url)
+                if match:
+                    tweet_id = int(match.group(1))
+                    if tweet_id in tweet_map:
+                        tweet = tweet_map[tweet_id]
+                        topic_tweets.append(schemas.SummaryTweet(
+                            id=tweet.id,
+                            text=tweet.text,
+                            like_count=tweet.like_count,
+                            retweet_count=tweet.retweet_count,
+                            twitter_created_at=tweet.twitter_created_at,
+                        ))
+            
             parsed_topics[topic_name] = schemas.TopicSentiment(
                 noticing=sentiment.get("noticing", False),
                 comment=sentiment.get("comment", ""),
-                examples=sentiment.get("examples", []),
+                examples=examples,
+                tweets=topic_tweets,
             )
 
         return schemas.SummaryResponse(username=username, topics=parsed_topics)
