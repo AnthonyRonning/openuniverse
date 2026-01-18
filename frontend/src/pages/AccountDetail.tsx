@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
-import { FileDown } from 'lucide-react';
+import { FileDown, ExternalLink } from 'lucide-react';
 import {
   fetchAccount,
   fetchAccountTweets,
@@ -289,7 +289,7 @@ function SummaryCard({ username }: { username: string }) {
                 {sentiment.tweets.map((tweet) => (
                   <TweetCard
                     key={tweet.id}
-                    id={tweet.id}
+                    id={String(tweet.id)}
                     text={tweet.text}
                     likeCount={tweet.like_count}
                     retweetCount={tweet.retweet_count}
@@ -364,7 +364,18 @@ export default function AccountDetail() {
             )}
             {account.verified && <span className="text-primary">✓</span>}
           </div>
-          <div className="text-sm text-muted-foreground">@{account.username}</div>
+          <div className="text-sm text-muted-foreground flex items-center gap-1.5">
+            @{account.username}
+            <a
+              href={`https://x.com/${account.username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground"
+              title="View on X"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
           {account.description && (
             <p className="text-sm text-foreground/80 mt-1">{account.description}</p>
           )}
@@ -484,7 +495,7 @@ export default function AccountDetail() {
                 {tweets?.tweets.map((tweet) => (
                   <TweetCard
                     key={tweet.id}
-                    id={tweet.id}
+                    id={String(tweet.id)}
                     text={tweet.text}
                     likeCount={tweet.like_count}
                     retweetCount={tweet.retweet_count}
