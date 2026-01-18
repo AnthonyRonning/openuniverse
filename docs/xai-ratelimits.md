@@ -1,0 +1,849 @@
+# Rate limits
+
+Every day, many thousands of developers make requests to the X API. To help manage the sheer volume of these requests, limits are placed on the number of requests that can be made. These limits help provide the reliable and scalable API that our developer community relies on.
+
+The maximum number of requests allowed is based on a time interval, typically over a specified period or window of time. The most common interval is fifteen minutes. For example, an endpoint with a limit of 900 requests per 15 minutes allows up to 900 requests in any 15-minute interval.
+
+Rate limits depend on the authentication method. For instance, if using [OAuth 1.0a User Context](/resources/fundamentals/authentication), each set of users’ [Access Tokens](/resources/fundamentals/authentication#obtaining-access-tokens-using-3-legged-oauth-flow) has its own rate limit per period. Alternatively, if using [OAuth 2.0 Bearer Token](/resources/fundamentals/authentication#oauth-2-0), your app will have its own separate limit per time period. When these limits are exceeded, an error is returned.
+
+## Table of contents
+
+* [X API v2 rate limits](#v2-limits)
+* [X API Enterprise rate limits](#v2-limits-enterprise)
+* [Rate limits and authentication method](#auth)
+* [HTTP headers and response codes](#headers-and-codes)
+* [Recovering from rate limits](#recovering)
+* [Tips to avoid being rate limited](#tips)
+
+## X API v2 rate limits
+
+The following table lists the rate limits of each X API paid plan. These limits are also available in the [developer portal](/resources/fundamentals/developer-portal)'s products section.
+
+<table class="rate-limit-table">
+  <thead>
+    <tr>
+      <th>Endpoint</th>
+      <th>Pro Limit <button data-feather-tooltip-target="" tabindex="0" aria-label="learn more" class="IconButton IconButton--infoIcon IconButton--small index__lightThemeColor--1bIsd" type="button"><span aria-hidden="true" class="Icon Icon--info" /></button></th>
+      <th>Basic Limit <button data-feather-tooltip-target="" tabindex="0" aria-label="learn more" class="IconButton IconButton--infoIcon IconButton--small index__lightThemeColor--1bIsd" type="button"><span aria-hidden="true" class="Icon Icon--info" /></button></th>
+      <th>Free Limit <button data-feather-tooltip-target="" tabindex="0" aria-label="learn more" class="IconButton IconButton--infoIcon IconButton--small index__lightThemeColor--1bIsd" type="button"><span aria-hidden="true" class="Icon Icon--info" /></button></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td colspan="4"><strong>Tweets</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/post-delete-by-post-id">DELETE /2/tweets/:id</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">17 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />17 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/causes-the-user-in-the-path-to-unlike-the-specified-post">DELETE /2/users/:id/likes/:tweet\_id</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">100 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/causes-the-user-in-the-path-to-unretweet-the-specified-post">DELETE /2/users/:id/retweets/:tweet\_id</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/post-lookup-by-post-ids">GET /2/tweets</a></td>
+      <td data-label="Pro Limit">900 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />450 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/post-lookup-by-post-id">GET /2/tweets/:id</a></td>
+      <td data-label="Pro Limit">900 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />450 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/returns-user-objects-that-have-liked-the-provided-post-id">GET /2/tweets/:id/liking\_users</a></td>
+      <td data-label="Pro Limit">75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />25 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/retrieve-posts-that-quote-a-post">GET /2/tweets/:id/quote\_tweets</a></td>
+      <td data-label="Pro Limit">75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/returns-user-objects-that-have-retweeted-the-provided-post-id">GET /2/tweets/:id/retweeted\_by</a></td>
+      <td data-label="Pro Limit">75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/full-archive-search-counts">GET /2/tweets/counts/all</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+
+      <td data-label="Basic Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/recent-search-counts">GET /2/tweets/counts/recent</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/full-archive-search-counts">GET /2/tweets/search/all</a></td>
+      <td data-label="Pro Limit">1 requests / second<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / second<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+
+      <td data-label="Basic Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/recent-search-counts">GET /2/tweets/search/recent</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />450 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">60 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />60 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/filtered-stream">GET /2/tweets/search/stream</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+
+      <td data-label="Basic Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/rules-lookup">GET /2/tweets/search/stream/rules</a></td>
+      <td data-label="Pro Limit">450 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+
+      <td data-label="Basic Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/returns-post-objects-liked-by-the-provided-user-id">GET /2/users/:id/liked\_tweets</a></td>
+      <td data-label="Pro Limit">75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/user-mention-timeline-by-user-id">GET /2/users/:id/mentions</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />450 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">10 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/user-home-timeline-by-user-id">GET /2/users/:id/timelines/reverse\_chronological</a></td>
+      <td data-label="Pro Limit">180 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/user-posts-timeline-by-user-id">GET /2/users/:id/tweets</a></td>
+      <td data-label="Pro Limit">900 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1500 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />10 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/returns-repost-of-user">GET /2/users/reposts\_of\_me</a></td>
+      <td data-label="Pro Limit">75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/creation-of-a-post">POST /2/tweets</a></td>
+      <td data-label="Pro Limit">100 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />10000 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">100 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1667 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">17 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />17 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/adddelete-rules">POST /2/tweets/search/stream/rules</a></td>
+      <td data-label="Pro Limit">100 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+
+      <td data-label="Basic Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/causes-the-user-in-the-path-to-like-the-specified-post">POST /2/users/:id/likes</a></td>
+      <td data-label="Pro Limit">1000 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">200 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/causes-the-user-in-the-path-to-repost-the-specified-post">POST /2/users/:id/retweets</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/hide-replies">PUT /2/tweets/:tweet\_id/hidden</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td colspan="4"><strong>Users</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/unfollow-user">DELETE /2/users/:source\_user\_id/following/:target\_user\_id</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/unmute-user-by-user-id">DELETE /2/users/:source\_user\_id/muting/:target\_user\_id</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/user-lookup-by-ids">GET /2/users</a></td>
+      <td data-label="Pro Limit">900 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">100 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />500 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/user-lookup-by-id">GET /2/users/:id</a></td>
+      <td data-label="Pro Limit">900 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">100 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />500 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/returns-user-objects-that-are-blocked-by-provided-user-id">GET /2/users/:id/blocking</a></td>
+      <td data-label="Pro Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/returns-user-objects-that-are-muted-by-the-provided-user-id">GET /2/users/:id/muting</a></td>
+      <td data-label="Pro Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">100 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/user-lookup-by-usernames">GET /2/users/by</a></td>
+      <td data-label="Pro Limit">900 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">100 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />500 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/user-lookup-by-username">GET /2/users/by/username/:username</a></td>
+      <td data-label="Pro Limit">900 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">100 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />500 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">3 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />3 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/user-lookup-me">GET /2/users/me</a></td>
+      <td data-label="Pro Limit">75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">250 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">25 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/user-search">GET /2/users/search</a></td>
+      <td data-label="Pro Limit">900 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+
+      <td data-label="Basic Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/follow-user">POST /2/users/:id/following</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/mute-user-by-user-id">POST /2/users/:id/muting</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td colspan="4"><strong>Spaces</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/spaces/space-lookup-up-space-ids">GET /2/spaces</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />25 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/spaces/space-lookup-by-space-id">GET /2/spaces/:id</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />25 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/spaces/retrieve-the-list-of-users-who-purchased-a-ticket-to-the-given-space">GET /2/spaces/:id/buyers</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />25 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/spaces/retrieve-posts-from-a-space">GET /2/spaces/:id/tweets</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />25 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/spaces/space-lookup-by-their-creators">GET /2/spaces/by/creator\_ids</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / second<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />25 requests / second<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / second<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/spaces/search-for-spaces">GET /2/spaces/search</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />25 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td colspan="4"><strong>Direct Messages</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/direct-messages/delete-dm">DELETE /2/dm\_events/:id</a></td>
+      <td data-label="Pro Limit">1500 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />4000 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">200 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />2500 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/direct-messages/get-dm-events-for-a-dm-conversation">GET /2/dm\_conversations/:dm\_conversation\_id/dm\_events</a></td>
+      <td data-label="Pro Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/direct-messages/get-dm-events-for-a-dm-conversation">GET /2/dm\_conversations/with/:participant\_id/dm\_events</a></td>
+      <td data-label="Pro Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/direct-messages/get-recent-dm-events">GET /2/dm\_events</a></td>
+      <td data-label="Pro Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/direct-messages/get-dm-events-by-id">GET /2/dm\_events/:id</a></td>
+      <td data-label="Pro Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/direct-messages/create-a-new-dm-conversation">POST /2/dm\_conversations</a></td>
+      <td data-label="Pro Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1440 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/direct-messages/send-a-new-message-to-a-dm-conversation">POST /2/dm\_conversations/:dm\_conversation\_id/messages</a></td>
+      <td data-label="Pro Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1440 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/direct-messages/send-a-new-message-to-a-user">POST /2/dm\_conversations/with/:participant\_id/messages</a></td>
+      <td data-label="Pro Limit">1440 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1440 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="4"><strong>Lists</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/delete-list">DELETE /2/lists/:id</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/remove-a-list-member">DELETE /2/lists/:id/members/:user\_id</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/unfollow-a-list">DELETE /2/users/:id/followed\_lists/:list\_id</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/unpin-a-list">DELETE /2/users/:id/pinned\_lists/:list\_id</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/list-lookup-by-list-id">GET /2/lists/:id</a></td>
+      <td data-label="Pro Limit">75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/users/returns-user-objects-that-are-members-of-a-list-by-the-provided-list-id">GET /2/lists/:id/members</a></td>
+      <td data-label="Pro Limit">900 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />900 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />25 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/list-posts-timeline-by-list-id">GET /2/lists/:id/tweets</a></td>
+      <td data-label="Pro Limit">900 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />900 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />25 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/get-a-users-list-memberships">GET /2/users/:id/list\_memberships</a></td>
+      <td data-label="Pro Limit">75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />25 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/get-a-users-owned-lists">GET /2/users/:id/owned\_lists</a></td>
+      <td data-label="Pro Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">100 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />500 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/get-a-users-pinned-lists">GET /2/users/:id/pinned\_lists</a></td>
+      <td data-label="Pro Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">100 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />500 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/create-list">POST /2/lists</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">100 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/add-a-list-member">POST /2/lists/:id/members</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/follow-a-list">POST /2/users/:id/followed\_lists</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/pin-a-list">POST /2/users/:id/pinned\_lists</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/lists/update-list">PUT /2/lists/:id</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td colspan="4"><strong>Bookmarks</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/bookmarks/remove-a-bookmarked-post">DELETE /2/users/:id/bookmarks/:tweet\_id</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/bookmarks/bookmarks-by-user">GET /2/users/:id/bookmarks</a></td>
+      <td data-label="Pro Limit">180 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">10 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/bookmarks/introduction">GET /2/users/:id/bookmarks/folders</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/posts/bookmarks/introduction">GET /2/users/:id/bookmarks/folders/:folder\_id</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/bookmarks/add-post-to-bookmarks">POST /2/users/:id/bookmarks</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong></td>
+    </tr>
+
+    <tr>
+      <td colspan="4"><strong>Compliance</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/compliance/list-compliance-jobs">GET /2/compliance/jobs</a></td>
+      <td data-label="Pro Limit">150 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/compliance/get-compliance-job">GET /2/compliance/jobs/:job\_id</a></td>
+      <td data-label="Pro Limit">150 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">5 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/compliance/create-compliance-job">POST /2/compliance/jobs</a></td>
+      <td data-label="Pro Limit">150 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td colspan="4"><strong>Usage</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/usage/post-usage">GET /2/usage/tweets</a></td>
+      <td data-label="Pro Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">50 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td colspan="4"><strong>Trends</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/trends/trends">GET /2/trends/by/woeid/:id</a></td>
+      <td data-label="Pro Limit">75 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">15 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+
+      <td data-label="Free Limit">
+        <div>
+          <svg class="lucide lucide-x" fill="none" height="24" stroke="red" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" x2="6" y1="6" y2="18" />
+
+            <line x1="6" x2="18" y1="6" y2="18" />
+          </svg>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/trends/introduction">GET /2/users/personalized\_trends</a></td>
+      <td data-label="Pro Limit">10 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />200 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />20 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 24 hours<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td colspan="4"><strong>Communities</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/communities/lookup/introduction">GET /2/communities/:id</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />25 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+
+    <tr>
+      <td data-label="Endpoint"><a href="/x-api/communities/search/introduction">GET /2/communities/search</a></td>
+      <td data-label="Pro Limit">300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />300 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Basic Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />25 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+      <td data-label="Free Limit">1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER USER</strong><br />1 requests / 15 mins<br /><strong class="index__tenPx--K47R6">PER APP</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+## Rate limits and authentication method
+
+Rate limits are set at both the developer App and user access token levels:
+
+* **[OAuth 2.0 Bearer Token](/resources/fundamentals/authentication/oauth-2-0/application-only): App rate limit**
+  This method allows you to make a certain number of requests on behalf of your developer App. When using this authentication method, limits are determined by the requests made with a Bearer Token.
+  * Example: With a limit of 450 requests per 15-minute interval, you can make 450 requests on behalf of your App within that interval.
+
+* **[OAuth 1.0a User Context](/resources/fundamentals/authentication/oauth-1-0a/obtaining-user-access-tokens): User rate limit**
+  This method allows requests to be made on behalf of a X user identified by the user Access Token. For example, if retrieving private metrics from Posts, authenticate with user Access Tokens for that user, generated using the [3-legged OAuth flow](/resources/fundamentals/authentication#obtaining-access-tokens-using-3-legged-oauth-flow).
+  * Example: With a limit of 900 requests per 15 minutes per user, you can make up to 900 requests per user in that time frame.
+
+...
+
+## HTTP headers and response codes
+
+Use HTTP headers to understand where your application stands within a given rate limit, based on the most recent request made.
+
+* `x-rate-limit-limit`: rate limit ceiling for the endpoint
+* `x-rate-limit-remaining`: remaining requests for the 15-minute window
+* `x-rate-limit-reset`: remaining time before the rate limit resets (in UTC epoch seconds)
+
+### Error Responses
+
+If an application exceeds the rate limit for an endpoint, the API will return a [HTTP 429 “Too Many Requests”](http://tools.ietf.org/html/rfc6585) response with the following error message in the response body:
+
+```json  theme={null}
+{ "errors": [ { "code": 88, "message": "Rate limit exceeded" } ] }
+```
+
+## Recovering from a rate limit
+
+When these rate limits are exceeded, a 429 'Too many requests' error is returned from the endpoint. As discussed below, when rate limit errors occur, a best practice is to examine HTTP headers that indicate when the limit resets and pause requests until then.<br />When a "too many requests" or rate-limiting error occurs, the frequency of making requests needs to be slowed down. When a rate limit error is hit, the `x-rate-limit-reset:` HTTP header can be checked to learn when the rate-limiting will reset<br /><br />. Another common pattern is based on exponential backoff, where the time between requests starts off small (for example, a few seconds), then doubled before each retry. This is continued until a request is successful, or some reasonable maximum time between requests is reached (for example, a few minutes).<br /><br /> Ideally, the client-side is self-aware of existing rate limits and can pause requests until the currently exceeded window expires. If you exceed a 15-minute limit, then waiting a minute or two before retrying makes sense.<br /><br /> Note that beyond these limits on the number of requests, the Standard Basic level of access provides up to 500,000 Posts per month from the recent search and filtered stream endpoints. If you have exceeded the monthly limit on the number of Posts, then it makes more sense for your app to raise a notification and know its enrollment day of the month and hold off requests until that day.
+
+### Tips to avoid being rate limited
+
+The tips below are there to help you code defensively and reduce the possibility of being rate limited. Some application features that you may want to provide are simply impossible in light of rate-limiting, especially around the freshness of results. If real-time information is an aim of your application, look into the filtered and sampled stream endpoints.
+
+#### Caching
+
+Store API responses if expecting frequent usage. Instead of calling the API on every page load, cache the response locally.
+
+#### Prioritize active users
+
+If your site keeps track of many X users (for example, fetching their current status or statistics about their X usage), consider only requesting data for users who have recently signed into your site.
+
+#### Adapt to the search results
+
+If your application monitors a high volume of search terms, query less often for searches that have no results than for those that do. By using a back-off you can keep up to date on queries that are popular but not waste cycles requesting queries that very rarely change. Alternatively, consider using the filtered stream endpoint and filter with your search queries.
+
+#### Denylist
+
+If an application abuses the rate limits, it will be denied. Denied apps are unable to get a response from the X API. If you or your application has been denied and you think there has been a mistake, you can use our [Platform Support forms](https://support.x.com/forms/platform) to request assistance. Please include the following information:
+
+1. Explain why you think your application was denied.
+2. If you are no longer being rate limited, describe in detail how you fixed the problem.
+
+
+---
+
+> To find navigation and other pages in this documentation, fetch the llms.txt file at: https://docs.x.com/llms.txt
