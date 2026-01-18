@@ -1,5 +1,8 @@
 # OpenCCP Development Commands
 
+# Load .env file automatically
+set dotenv-load
+
 # Default: show available commands
 default:
     @just --list
@@ -28,12 +31,11 @@ backend-install:
 
 # Run backend server with LOCAL database
 backend:
-    backend/.venv/bin/uvicorn backend.api.main:app --reload --host 0.0.0.0 --port 8000
+    .venv/bin/uvicorn backend.api.main:app --reload --host 0.0.0.0 --port 8000
 
 # Run backend server with PRODUCTION database (for testing backend changes with real data)
-# Uses PROD_DATABASE_URL from .env
 backend-prod:
-    DATABASE_URL="$PROD_DATABASE_URL" backend/.venv/bin/uvicorn backend.api.main:app --reload --host 0.0.0.0 --port 8000
+    DATABASE_URL="$PROD_DATABASE_URL_FLY_COMPAT" .venv/bin/uvicorn backend.api.main:app --reload --host 0.0.0.0 --port 8000
 
 # Install frontend dependencies
 frontend-install:
