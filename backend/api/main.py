@@ -828,7 +828,7 @@ def search_topic(
                     if reply_data:
                         reply_author = db.query(Account).filter(Account.id == reply_data.account_id).first()
                         top_reply = schemas.TopicTweetResult(
-                            id=reply_data.id,
+                            id=str(reply_data.id),
                             text=reply_data.text,
                             like_count=reply_data.like_count,
                             retweet_count=reply_data.retweet_count,
@@ -839,7 +839,7 @@ def search_topic(
                         )
             
             results.append(schemas.TopicTweetResult(
-                id=tweet_data.id,
+                id=str(tweet_data.id),
                 text=tweet_data.text,
                 like_count=tweet_data.like_count,
                 retweet_count=tweet_data.retweet_count,
@@ -863,14 +863,17 @@ def analyze_topic_sides(
 ):
     """Analyze tweets and classify them into two sides."""
     try:
+        # Convert string IDs to int for DB query
+        tweet_ids_int = [int(tid) for tid in request.tweet_ids]
+        
         # Fetch tweets from DB
-        tweets = db.query(Tweet).filter(Tweet.id.in_(request.tweet_ids)).all()
+        tweets = db.query(Tweet).filter(Tweet.id.in_(tweet_ids_int)).all()
         if not tweets:
             raise HTTPException(status_code=404, detail="No tweets found")
         
-        # Build tweet data for analysis
+        # Build tweet data for analysis (keep IDs as strings)
         tweets_data = [
-            {"id": t.id, "text": t.text}
+            {"id": str(t.id), "text": t.text}
             for t in tweets
         ]
         
@@ -887,7 +890,7 @@ def analyze_topic_sides(
             side_b_name=request.side_b_name,
             classifications=[
                 schemas.TweetClassification(
-                    tweet_id=c["tweet_id"],
+                    tweet_id=str(c["tweet_id"]),
                     side=c["side"],
                     reason=c["reason"],
                 )
