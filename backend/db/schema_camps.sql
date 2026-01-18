@@ -5,7 +5,6 @@
 CREATE TABLE camps (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
-    slug VARCHAR(50) NOT NULL UNIQUE,
     description TEXT,
     color VARCHAR(20) DEFAULT '#3b82f6',
     created_at TIMESTAMPTZ DEFAULT NOW()
