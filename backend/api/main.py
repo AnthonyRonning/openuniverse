@@ -767,9 +767,11 @@ def search_topic(
         
         # Search for tweets AND their top replies in one Grok call
         search_result = topic_service.search_topic_with_replies(request.query, limit=10)
+        print(f"[DEBUG] Grok search_result: {search_result}")
         tweets_data = search_result.get("tweets", [])
         
         if not tweets_data:
+            print(f"[DEBUG] No tweets_data found")
             return schemas.TopicSearchResponse(query=request.query, tweets=[])
         
         # Collect all tweet IDs (main tweets + replies)
@@ -785,7 +787,9 @@ def search_topic(
                     all_tweet_urls.append(t["top_reply_url"])
         
         # Extract all tweet IDs and fetch in one batch
+        print(f"[DEBUG] all_tweet_urls: {all_tweet_urls}")
         all_tweet_ids = extract_tweet_ids_from_urls(all_tweet_urls)
+        print(f"[DEBUG] all_tweet_ids: {all_tweet_ids}")
         if not all_tweet_ids:
             return schemas.TopicSearchResponse(query=request.query, tweets=[])
         
