@@ -199,16 +199,24 @@ function SummaryCard({ username }: { username: string }) {
             <GearIcon />
           </button>
         </div>
-        <p className="text-muted-foreground text-sm mb-4">
-          Generate an AI-powered analysis of this account's positions on various topics.
-        </p>
-        <button
-          onClick={() => mutation.mutate()}
-          disabled={mutation.isPending}
-          className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground rounded-lg transition-colors"
-        >
-          {mutation.isPending ? 'Generating...' : 'Generate Summary'}
-        </button>
+        {mutation.isPending ? (
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm">Analyzing tweets and generating summary...</span>
+          </div>
+        ) : (
+          <>
+            <p className="text-muted-foreground text-sm mb-4">
+              Generate an AI-powered analysis of this account's positions on various topics.
+            </p>
+            <button
+              onClick={() => mutation.mutate()}
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
+            >
+              Generate Summary
+            </button>
+          </>
+        )}
         {mutation.isError && (
           <p className="text-destructive text-sm mt-2">
             {mutation.error instanceof Error ? mutation.error.message : 'Failed to generate summary'}
@@ -236,8 +244,11 @@ function SummaryCard({ username }: { username: string }) {
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
-            className="text-sm px-3 py-1 bg-secondary hover:bg-secondary/80 text-foreground rounded transition-colors"
+            className="text-sm px-3 py-1 bg-secondary hover:bg-secondary/80 text-foreground rounded transition-colors flex items-center gap-2"
           >
+            {mutation.isPending && (
+              <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            )}
             {mutation.isPending ? 'Regenerating...' : 'Regenerate'}
           </button>
           <button
@@ -246,7 +257,11 @@ function SummaryCard({ username }: { username: string }) {
             className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
             title="Download report"
           >
-            <FileDown className="w-4 h-4" />
+            {reportMutation.isPending ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4" />
+            )}
           </button>
         </div>
       </div>
