@@ -1,5 +1,5 @@
 {
-  description = "OpenCCP - Twitter/X account graph analysis and sentiment tracking";
+  description = "OpenUniverse - Twitter/X account graph analysis and sentiment tracking";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -59,11 +59,11 @@
             until ${pkgs.postgresql}/bin/pg_isready -h localhost -p 5433 -q; do sleep 0.5; done
             
             # Create user and database if they don't exist
-            ${pkgs.postgresql}/bin/psql -h localhost -p 5433 -tc "SELECT 1 FROM pg_roles WHERE rolname='openccp_user'" postgres | grep -q 1 || \
-              ${pkgs.postgresql}/bin/psql -h localhost -p 5433 -c "CREATE USER openccp_user WITH PASSWORD 'openccp_pass';" postgres
+            ${pkgs.postgresql}/bin/psql -h localhost -p 5433 -tc "SELECT 1 FROM pg_roles WHERE rolname='openuniverse_user'" postgres | grep -q 1 || \
+              ${pkgs.postgresql}/bin/psql -h localhost -p 5433 -c "CREATE USER openuniverse_user WITH PASSWORD 'openuniverse_pass';" postgres
             
-            ${pkgs.postgresql}/bin/psql -h localhost -p 5433 -tc "SELECT 1 FROM pg_database WHERE datname='openccp'" postgres | grep -q 1 || \
-              ${pkgs.postgresql}/bin/psql -h localhost -p 5433 -c "CREATE DATABASE openccp OWNER openccp_user;" postgres
+            ${pkgs.postgresql}/bin/psql -h localhost -p 5433 -tc "SELECT 1 FROM pg_database WHERE datname='openuniverse'" postgres | grep -q 1 || \
+              ${pkgs.postgresql}/bin/psql -h localhost -p 5433 -c "CREATE DATABASE openuniverse OWNER openuniverse_user;" postgres
             
             echo "PostgreSQL ready on port 5433"
           else
@@ -76,7 +76,7 @@
             cp .env.example .env
             echo "" >> .env
             echo "# Database (auto-configured by nix develop)" >> .env
-            echo "DATABASE_URL=postgres://openccp_user:openccp_pass@localhost:5433/openccp" >> .env
+            echo "DATABASE_URL=postgres://openuniverse_user:openuniverse_pass@localhost:5433/openuniverse" >> .env
             echo "Created .env from .env.example"
           fi
         '';
@@ -88,7 +88,7 @@
           shellHook = ''
             echo ""
             echo "=========================================="
-            echo "  OpenCCP Development Environment"
+            echo "  OpenUniverse Development Environment"
             echo "=========================================="
             echo ""
             
@@ -104,10 +104,10 @@
             echo "  psql:   $(psql --version | cut -d' ' -f3)"
             echo ""
             echo "Database:"
-            echo "  URL: postgres://openccp_user:openccp_pass@localhost:5433/openccp"
+            echo "  URL: postgres://openuniverse_user:openuniverse_pass@localhost:5433/openuniverse"
             echo ""
             echo "Commands:"
-            echo "  psql -h localhost -p 5433 -U openccp_user openccp"
+            echo "  psql -h localhost -p 5433 -U openuniverse_user openuniverse"
             echo ""
           '';
         };

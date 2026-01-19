@@ -1,4 +1,4 @@
-# OpenCCP Development Commands
+# OpenUniverse Development Commands
 
 # Load .env file automatically
 set dotenv-load
@@ -14,16 +14,16 @@ db-init:
 # Run all schema migrations (safe to run multiple times)
 db-migrate:
     #!/usr/bin/env bash
-    for f in backend/db/schema*.sql; do echo "Running $f"; psql -h localhost -p 5433 -U openccp_user openccp -f "$f"; done
+    for f in backend/db/schema*.sql; do echo "Running $f"; psql -h localhost -p 5433 -U openuniverse_user openuniverse -f "$f"; done
 
 # Reset database (drop and recreate all tables)
 db-reset:
-    psql -h localhost -p 5433 -U openccp_user openccp -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+    psql -h localhost -p 5433 -U openuniverse_user openuniverse -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
     just db-init
 
 # Connect to the database
 db:
-    psql -h localhost -p 5433 -U openccp_user openccp
+    psql -h localhost -p 5433 -U openuniverse_user openuniverse
 
 # Install backend dependencies
 backend-install:

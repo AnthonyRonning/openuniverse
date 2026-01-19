@@ -43,10 +43,10 @@
     
     if (tweets.length > 0) {
       // Send to content script via custom event
-      window.dispatchEvent(new CustomEvent('__openccp_tweets__', { 
+      window.dispatchEvent(new CustomEvent('__openuniverse_tweets__', { 
         detail: tweets 
       }));
-      console.log('OpenCCP: Found', tweets.length, 'tweets');
+      console.log('OpenUniverse: Found', tweets.length, 'tweets');
     }
   }
 
@@ -119,7 +119,7 @@
         entities: legacy.entities
       };
     } catch (e) {
-      console.error('OpenCCP: Error parsing tweet', e);
+      console.error('OpenUniverse: Error parsing tweet', e);
       return null;
     }
   }
@@ -129,12 +129,12 @@
   const originalXHRSend = XMLHttpRequest.prototype.send;
   
   XMLHttpRequest.prototype.open = function(method, url, ...rest) {
-    this._openccp_url = url;
+    this._openuniverse_url = url;
     return originalXHROpen.apply(this, [method, url, ...rest]);
   };
   
   XMLHttpRequest.prototype.send = function(...args) {
-    const url = this._openccp_url;
+    const url = this._openuniverse_url;
     
     if (typeof url === 'string' && isTweetEndpoint(url)) {
       this.addEventListener('load', function() {
@@ -150,5 +150,5 @@
     return originalXHRSend.apply(this, args);
   };
 
-  console.log('OpenCCP Tweet Collector: Injected script loaded (fetch + XHR)');
+  console.log('OpenUniverse Tweet Collector: Injected script loaded (fetch + XHR)');
 })();

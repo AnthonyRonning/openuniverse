@@ -9,7 +9,7 @@ X_BEARER_TOKEN = os.getenv("X_BEARER_TOKEN")
 # Database
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://openccp_user:openccp_pass@localhost:5433/openccp"
+    "postgresql://openuniverse_user:openuniverse_pass@localhost:5433/openuniverse"
 )
 
 # Scraping caps (for development/prototyping)

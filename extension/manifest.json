@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "OpenCCP Tweet Collector",
+  "name": "OpenUniverse Tweet Collector",
   "version": "1.0.0",
-  "description": "Crowdsource tweets to OpenCCP as you browse Twitter/X",
+  "description": "Crowdsource tweets to OpenUniverse as you browse Twitter/X",
   "permissions": [
     "storage"
   ],

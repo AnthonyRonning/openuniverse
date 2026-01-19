@@ -26,7 +26,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     stats.tweetsCollected += newTweets.length;
     saveStats();
     
-    console.log(`OpenCCP: Queued ${newTweets.length} tweets (total in queue: ${tweetQueue.length})`);
+    console.log(`OpenUniverse: Queued ${newTweets.length} tweets (total in queue: ${tweetQueue.length})`);
     
     // Send immediately if queue is large enough
     if (tweetQueue.length >= BATCH_SIZE) {
@@ -83,14 +83,14 @@ async function sendBatch() {
       stats.tweetsSent += result.tweets_added || batch.length;
       stats.lastSentAt = new Date().toISOString();
       saveStats();
-      console.log(`OpenCCP: Sent batch of ${batch.length} tweets`, result);
+      console.log(`OpenUniverse: Sent batch of ${batch.length} tweets`, result);
     } else {
       // Put tweets back in queue on failure
-      console.error('OpenCCP: Failed to send batch', response.status);
+      console.error('OpenUniverse: Failed to send batch', response.status);
       tweetQueue.unshift(...batch);
     }
   } catch (e) {
-    console.error('OpenCCP: Error sending batch', e);
+    console.error('OpenUniverse: Error sending batch', e);
     tweetQueue.unshift(...batch);
   }
 }
@@ -99,4 +99,4 @@ function saveStats() {
   chrome.storage.local.set({ stats });
 }
 
-console.log('OpenCCP Tweet Collector: Background service worker started');
+console.log('OpenUniverse Tweet Collector: Background service worker started');

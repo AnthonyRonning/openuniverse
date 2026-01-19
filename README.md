@@ -1,4 +1,4 @@
-# OpenCCP - Open Crypto Community Profiler
+# OpenUniverse - Open Crypto Community Profiler
 
 A graph-based Twitter/X account analysis tool for tracking accounts, their networks, and keyword-based sentiment analysis.
 
@@ -294,7 +294,7 @@ MAX_FOLLOWING_TO_FETCH = 3      # Following to pull (1 level deep)
 ## Project Structure
 
 ```
-openccp/
+openuniverse/
 ├── flake.nix                 # Nix dev environment
 ├── flake.lock
 ├── README.md
@@ -411,7 +411,7 @@ The extension captures tweets as you browse Twitter/X and sends them to our data
 
 **Step 1: Download the extension**
 
-1. Go to the [GitHub repository](https://github.com/AnthonyRonning/openccp)
+1. Go to the [GitHub repository](https://github.com/AnthonyRonning/openuniverse)
 2. Click the green **Code** button
 3. Click **Download ZIP**
 4. Find the downloaded ZIP file (usually in your Downloads folder)
@@ -428,12 +428,12 @@ The extension captures tweets as you browse Twitter/X and sends them to our data
 6. Select the `extension` folder (not the main folder - the one *inside* called `extension`)
 7. Click **Select Folder**
 
-You should see "OpenCCP Tweet Collector" appear in your extensions list!
+You should see "OpenUniverse Tweet Collector" appear in your extensions list!
 
 **Step 3: Pin the extension (optional but recommended)**
 
 1. Click the puzzle piece icon 🧩 in Chrome's toolbar (top-right)
-2. Find "OpenCCP Tweet Collector" in the list
+2. Find "OpenUniverse Tweet Collector" in the list
 3. Click the pin icon 📌 next to it
 
 Now you'll see the extension icon in your toolbar!

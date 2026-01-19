@@ -7,7 +7,7 @@ load_dotenv()
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "postgresql://openccp_user:openccp_pass@localhost:5433/openccp"
+    "postgresql://openuniverse_user:openuniverse_pass@localhost:5433/openuniverse"
 )
 
 engine = create_engine(DATABASE_URL, echo=False)

@@ -1,5 +1,5 @@
 """
-FastAPI application for OpenCCP.
+FastAPI application for OpenUniverse.
 """
 
 import os
@@ -21,7 +21,7 @@ from backend.api import schemas
 
 
 app = FastAPI(
-    title="OpenCCP API",
+    title="OpenUniverse API",
     description="Twitter/X account graph analysis and sentiment tracking",
     version="0.1.0",
 )

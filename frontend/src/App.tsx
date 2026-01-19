@@ -36,7 +36,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <nav className="border-b border-border bg-card/50 backdrop-blur sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-2 flex items-center gap-1">
           <Link to="/" className="text-lg font-semibold text-foreground mr-4">
-            OpenCCP
+            OpenUniverse
           </Link>
           <NavLink to="/">Dashboard</NavLink>
           <NavLink to="/tweets">Tweets</NavLink>

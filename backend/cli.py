@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-CLI for OpenCCP scraper and analyzer.
+CLI for OpenUniverse scraper and analyzer.
 
 Usage:
     python -m backend.cli scrape anthonyronning

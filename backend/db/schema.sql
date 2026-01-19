@@ -1,4 +1,4 @@
--- OpenCCP Database Schema
+-- OpenUniverse Database Schema
 -- Generated from X API response analysis
 
 -- ============================================================================
